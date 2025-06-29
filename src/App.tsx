@@ -1,18 +1,13 @@
-import logo from './assets/logo-v1.png';
+import Header from './components/Header';
+import Footer from './components/Footer';
 function App() {
   return (
-    <div className="w-full toothline-secondary p-5">
+    <div className="w-full bg-white">
       {/* Header */}
-      <header className="max-w-6xl flex flex-wrap mx-auto">
-        <div className="w-1/2">
-          <img src={logo} className='w-40' />
-        </div>
-        <div className="w-1/2 text-right my-auto">
-          <button type="button" className="font-opensans font-bold toothline-accent hover:toothline-accent-hover text-white px-3 py-2 rounded-md text-sm transition ease-in-out duration-300">Book Appointment</button>
-        </div>
-      </header>
+      <Header />
       {/* Main */}
       {/* Footer */}
+      <Footer />
     </div>
   );
 }
