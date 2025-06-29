@@ -23,7 +23,7 @@ const App = () => {
             <div className="my-auto">
               <h1 className="font-montserrat font-bold tracking-wide text-3xl md:text-5xl my-5">Your Smile, Our Priority</h1>
               <h2 className="md:text-lg my-10 md:w-2/3 px-3 md:px-0 mx-auto">Experience world-class dental care delivered by our dedicated team of specialists.</h2>
-              <button type="button" onClick={() => scrollToRef(bookRef)} className="my-5 toothline-bg-light hover:toothline-accent px-5 py-2 rounded-md toothline-text-accent hover:text-white md:text-lg font-bold transition ease-in-out duration-300">Book Your Visit</button>
+              <button type="button" onClick={() => scrollToRef(bookRef)} className="my-5 toothline-bg-light hover:toothline-accent px-5 py-2 rounded-md toothline-text-accent hover:text-white md:text-lg font-bold transition ease-in-out duration-300 transform hover:-translate-y-1 hover:shadow-lg">Book Your Visit</button>
             </div>
           </div>
         </div>
