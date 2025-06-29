@@ -1,7 +1,7 @@
 import { MapPin, Phone, Send } from 'lucide-react';
 function Footer() {
   return (
-    <footer className="w-full toothline-accent p-5 text-white font-opensans">
+    <footer className="w-full toothline-accent p-5 text-white">
         <div className="max-w-6xl grid md:grid-cols-3 grid-cols-1 gap-3 mx-auto py-5">
             <div className="my-3 md:my-0">
                 <p className="font-bold tracking-wider text-sm">Toothline</p>

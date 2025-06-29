@@ -6,7 +6,7 @@ function Header() {
           <img src={logo} className='w-40' />
         </div>
         <div className="w-1/2 text-right my-auto">
-          <button type="button" className="font-opensans font-bold toothline-accent hover:toothline-accent-hover text-white px-3 py-2 rounded-md text-sm transition ease-in-out duration-300">Book Appointment</button>
+          <button type="button" className="font-bold toothline-accent hover:toothline-accent-hover text-white px-3 py-2 rounded-md text-sm transition ease-in-out duration-300">Book Appointment</button>
         </div>
     </header>
   );
