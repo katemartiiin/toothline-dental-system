@@ -22,7 +22,7 @@ const Sidebar: React.FC = () => {
   };
 
   return (
-    <aside className="w-64 bg-white border-r p-4 flex flex-col h-screen font-montserrat">
+    <aside className="fixed w-64 bg-white border-r p-4 flex flex-col h-screen font-montserrat">
       <img src={logo} className="mb-4" />
 
       <div className="flex-1 space-y-2 toothline-text">

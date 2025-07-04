@@ -71,6 +71,10 @@
         background-color: #F7F9FA;
     }
 
+    .toothline-bg-error {
+        background-color: #FF6B6B;
+    }
+
     .toothline-text {
         color: #6C757D;
     }
