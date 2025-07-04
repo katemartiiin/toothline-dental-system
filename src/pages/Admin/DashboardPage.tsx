@@ -67,7 +67,7 @@ const DashboardPage: React.FC = () => {
           <p>Robert Garcia</p>
           <p>11:45 AM</p>
           <p>Tooth Filling</p>
-          <p>Dr. Sarag Wilson</p>
+          <p>Dr. Sarah Wilson</p>
           <p className="fw-500 toothline-error">Pending</p>
           <p className="fw-500 toothline-text-accent">View<span className="toothline-success ml-3">Confirm</span></p>
         </div>
