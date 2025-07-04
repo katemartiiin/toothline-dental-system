@@ -115,7 +115,7 @@ const ServicesPage: React.FC = () => {
 
       </div>
       {/* Table */}
-      <div className="w-full flex flex-wrap p-10 bg-white rounded-lg shadow-md my-5">
+      <div className="w-full flex flex-wrap px-10 py-5 bg-white rounded-lg shadow-md my-5">
         <h2 className="fw-600 text-xl mb-5">Clinic Services</h2>
 
         {/* Table Headers */}

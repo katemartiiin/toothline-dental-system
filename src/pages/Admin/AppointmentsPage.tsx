@@ -11,7 +11,7 @@ const AppointmentsPage: React.FC = () => {
             onClick={() => setOpenCreate(true)}
             className="px-4 py-2 toothline-accent text-white rounded hover:toothline-primary"
           >
-            + New Appointment
+            + Add New Appointment
           </button>
         </div>
 
@@ -138,7 +138,7 @@ const AppointmentsPage: React.FC = () => {
 
       </div>
       {/* Table */}
-      <div className="w-full flex flex-wrap p-10 bg-white rounded-lg shadow-md my-5">
+      <div className="w-full flex flex-wrap px-10 py-5 bg-white rounded-lg shadow-md my-5">
         <h2 className="fw-600 text-xl mb-5">All Appointments</h2>
 
         {/* Table Headers */}
