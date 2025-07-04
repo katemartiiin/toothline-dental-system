@@ -9,10 +9,10 @@ const AdminLayout: React.FC = () => {
   // Simple dynamic title logic based on pathname
   const pageTitles: Record<string, string> = {
     '/admin/dashboard': 'Dashboard Overview',
-    '/admin/appointments': 'Appointments',
-    '/admin/schedules': 'Dentist Schedules',
-    '/admin/services': 'Dental Services',
-    '/admin/patients': 'Patients',
+    '/admin/appointments': 'Appointment Management',
+    '/admin/schedules': 'Dentist Schedule Management',
+    '/admin/services': 'Dental Service Management',
+    '/admin/patients': 'Patient Management',
     '/admin/security': 'Security Settings',
     '/admin/profile': 'My Profile',
   };
