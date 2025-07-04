@@ -2,7 +2,7 @@ import logo from '../../assets/logo-admin-white.png';
 const LoginPage: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center toothline-primary">
-      <div className="toothline-primary-login p-8 rounded-lg shadow-md w-full max-w-sm">
+      <div className="toothline-primary-login p-8 rounded-lg shadow-md w-full max-w-sm mx-5 md:mx-0">
         <div className="flex items-center justify-center">
           <img
             src={logo}

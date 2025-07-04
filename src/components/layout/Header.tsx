@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-
-const Header: React.FC = () => {
+import { LogOut, UserRoundPen } from 'lucide-react';
+type HeaderProps = {
+  title: string;
+};
+const Header: React.FC<HeaderProps> = ({ title }) => {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -16,8 +19,8 @@ const Header: React.FC = () => {
   }, []);
 
   return (
-    <header className="bg-white border-b px-6 py-4 shadow-sm flex items-center justify-between">
-      <h1 className="text-xl font-semibold text-gray-800">Toothline Admin Dashboard</h1>
+    <header className="bg-white border-b px-20 py-4 shadow-sm flex items-center justify-between">
+      <h1 className="font-montserrat text-xl fw-800 toothline-text-accent">{title}</h1>
 
       <div className="relative" ref={dropdownRef}>
         <button
@@ -40,9 +43,9 @@ const Header: React.FC = () => {
               <li>
                 <a
                   href="/admin/profile"
-                  className="block px-4 py-2 hover:bg-gray-100"
+                  className="flex px-4 py-2 hover:bg-gray-100"
                 >
-                  Profile
+                  <UserRoundPen size={15} className="mr-2 my-auto" /> Profile
                 </a>
               </li>
               <li>
@@ -50,9 +53,9 @@ const Header: React.FC = () => {
                   onClick={() => {
                     setOpen(false);
                   }}
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                  className="flex w-full text-left px-4 py-2 hover:bg-gray-100"
                 >
-                  Logout
+                  <LogOut size={15} className="mr-2 my-auto" /> Logout
                 </button>
               </li>
             </ul>
