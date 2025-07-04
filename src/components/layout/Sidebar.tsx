@@ -1,34 +1,60 @@
 import { NavLink } from 'react-router-dom';
+import logo from '../../assets/logo-admin.png';
+import {
+  CalendarCheck,
+  CalendarDays,
+  LayoutDashboard,
+  Settings,
+  Stethoscope,
+  UsersRound,
+  LogOut,
+} from 'lucide-react';
 
 const Sidebar: React.FC = () => {
   const linkClass = ({ isActive }: { isActive: boolean }) =>
-    `block px-4 py-2 rounded hover:bg-teal-100 ${
-      isActive ? 'bg-teal-200 font-semibold' : ''
+    `flex px-4 py-2 rounded hover:toothline-text hover:bg-teal-100 ${
+      isActive ? 'toothline-primary font-semibold text-white' : ''
     }`;
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    window.location.href = '/login';
+  };
+
   return (
-    <aside className="w-64 bg-teal-50 border-r p-4">
-      <h2 className="text-lg font-bold mb-4">Admin Panel</h2>
-      <nav className="space-y-2">
+    <aside className="w-64 bg-white border-r p-4 flex flex-col h-screen font-montserrat">
+      <img src={logo} className="mb-4" />
+
+      <div className="flex-1 space-y-2 toothline-text">
         <NavLink to="/admin/dashboard" className={linkClass}>
-          Dashboard
+          <LayoutDashboard size={20} className="mr-2 my-auto" /> Dashboard
         </NavLink>
         <NavLink to="/admin/appointments" className={linkClass}>
-          Appointments
+          <CalendarDays size={20} className="mr-2 my-auto" /> Appointments
         </NavLink>
         <NavLink to="/admin/schedules" className={linkClass}>
-          Schedules
+          <CalendarCheck size={20} className="mr-2 my-auto" /> Schedules
         </NavLink>
         <NavLink to="/admin/services" className={linkClass}>
-          Services
+          <Stethoscope size={20} className="mr-2 my-auto" /> Services
         </NavLink>
         <NavLink to="/admin/patients" className={linkClass}>
-          Patients
+          <UsersRound size={20} className="mr-2 my-auto" /> Patients
         </NavLink>
         <NavLink to="/admin/security" className={linkClass}>
-          Security
+          <Settings size={20} className="mr-2 my-auto" /> Security
         </NavLink>
-      </nav>
+      </div>
+
+      {/* Logout button fixed at the bottom */}
+      <div className="pt-4 border-t mt-4">
+        <button
+          onClick={handleLogout}
+          className="flex w-full px-4 py-2 text-red-600 rounded hover:bg-red-100"
+        >
+          <LogOut size={20} className="mr-2 my-auto" /> Log out
+        </button>
+      </div>
     </aside>
   );
 };

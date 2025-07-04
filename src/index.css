@@ -44,7 +44,7 @@
 @layer utilities {
     /* Colors */
     .toothline-primary {
-        background-color: #3EB8C0;
+        background-color: #3eb8c0;
     }
 
     .toothline-primary-login {
@@ -73,6 +73,10 @@
 
     .toothline-text {
         color: #6C757D;
+    }
+
+    .toothline-text-primary {
+        color: #3eb8c0;
     }
 
     .toothline-success {
