@@ -25,7 +25,7 @@ const AdminLayout: React.FC = () => {
       <Sidebar />
 
       {/* Main Content */}
-      <div className="flex flex-col flex-1">
+      <div className="ml-64 flex flex-col flex-1">
         <Header title={title} />
 
         {/* Dynamic Page Content */}
