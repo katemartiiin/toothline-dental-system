@@ -1,4 +1,4 @@
-import logo from '../assets/logo-v1.png';
+import logo from '../../assets/logo-v1.png';
 type HeaderProps = {
   onScrollToBook: () => void;
 };

@@ -44,7 +44,15 @@
 @layer utilities {
     /* Colors */
     .toothline-primary {
-        background-color: #3EB8C0;
+        background-color: #3eb8c0;
+    }
+
+    .toothline-primary-login {
+        background-color: #1ea6b0;
+    }
+
+    .toothline-primary-darker {
+        background-color: #0c7077;
     }
 
     .toothline-secondary {
@@ -63,8 +71,16 @@
         background-color: #F7F9FA;
     }
 
+    .toothline-bg-error {
+        background-color: #FF6B6B;
+    }
+
     .toothline-text {
         color: #6C757D;
+    }
+
+    .toothline-text-primary {
+        color: #3eb8c0;
     }
 
     .toothline-success {
