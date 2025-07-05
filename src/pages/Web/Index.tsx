@@ -1,42 +1,41 @@
 import axios from 'axios';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { scrollToRef } from '../../utils/scrollToRef';
 import Header from '../../components/web/Header';
 import Footer from '../../components/web/Footer';
 import Services from '../../components/web/Services';
 import BookingForm from '../../components/web/BookingForm';
+interface Service {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+}
+
 const Index = () => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phoneNumber: '',
-    preferredDate: '',
-    preferredTime: '',
-    service: ''
-  });
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    try {
-      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/appointments`, formData, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authentication': 'Bearer ' + import.meta.env.VITE_API_SECRET_KEY
-        }
-      });
-
-      console.log('Success:', response.data);
-    } catch (error) {
-      console.error('Error submitting form:', error);
-    }
-  };
-
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
   const bookRef = useRef<HTMLDivElement | null>(null);
+
+  const apiUrl = import.meta.env.VITE_API_BASE_URL;
+  const apiKey = import.meta.env.VITE_PUBLIC_API_KEY;
+
+  useEffect(() => {
+    axios.get(`${apiUrl}/admin/services`, {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+        }
+      }).then(response => {
+        setServices(response.data.data);
+        setLoading(false);
+      })
+      .catch(error => {
+        console.error('Failed to fetch services:', error);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) return <p>Loading services...</p>;
 
   const handleScrollToBook = () => {
     scrollToRef(bookRef);
@@ -62,7 +61,7 @@ const Index = () => {
         <Services />
         {/* Booking Form */}
         <div ref={bookRef} className="toothline-bg-light py-10">
-          <BookingForm />
+          <BookingForm services={services} />
         </div>
       </main>
       {/* Footer */}
