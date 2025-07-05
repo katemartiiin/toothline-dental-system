@@ -1,10 +1,41 @@
-import { useRef } from 'react';
+import axios from 'axios';
+import { useRef, useState } from 'react';
 import { scrollToRef } from '../../utils/scrollToRef';
 import Header from '../../components/web/Header';
 import Footer from '../../components/web/Footer';
 import Services from '../../components/web/Services';
 import BookingForm from '../../components/web/BookingForm';
 const Index = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phoneNumber: '',
+    preferredDate: '',
+    preferredTime: '',
+    service: ''
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/appointments`, formData, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authentication': 'Bearer ' + import.meta.env.VITE_API_SECRET_KEY
+        }
+      });
+
+      console.log('Success:', response.data);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+    }
+  };
+
   const bookRef = useRef<HTMLDivElement | null>(null);
 
   const handleScrollToBook = () => {
