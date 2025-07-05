@@ -1,4 +1,13 @@
-function BookingForm() {
+interface ServiceItem {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+}
+type BookingFormProps = {
+  services: ServiceItem[];
+};
+function BookingForm({ services }: BookingFormProps) {
   return (
     <div className="max-w-2xl bg-white rounded-lg shadow-md p-7 mx-5 md:mx-auto mb-3">
         <h3 className="font-bold font-montserrat text-2xl mb-5">Book Your Appointment</h3>
@@ -38,6 +47,11 @@ function BookingForm() {
             <label className="text-sm toothline-text">Service Needed *</label>
             <select className="w-full my-1 bg-gray-100 px-3 py-2 rounded-md border border-gray-400 text-sm">
                 <option>Select a service</option>
+                {services.map((service) => (
+                    <option key={service.id} value={service.id}>
+                    {service.name}
+                    </option>
+                ))}
             </select>
         </div>
 
