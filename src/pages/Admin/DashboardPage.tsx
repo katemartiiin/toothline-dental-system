@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from '../../lib/axios';
+import { fetchDashboardData } from '../../api/dashboard';
 interface Patient {
   id: number;
   name: string;
@@ -34,28 +34,16 @@ interface DashboardData {
 }
 
 const DashboardPage: React.FC = () => {
-
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        const res = await axios.get<DashboardData>('/admin/dashboard');
-        setDashboard(res.data);
-      } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to fetch dashboard');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboard();
+    fetchDashboardData().then(setDashboard).catch(console.error);
   }, []);
 
-  if (loading) return <p>Loading dashboard...</p>;
-  if (error) return <p className="text-red-500">{error}</p>;
+  // if (loading) return <p>Loading dashboard...</p>;
+  // if (error) return <p className="text-red-500">{error}</p>;
 
   return (
     <div className="w-full flex flex-wrap px-16 py-2">
@@ -120,7 +108,7 @@ const DashboardPage: React.FC = () => {
             </div>
           ))
         ) : (
-          <p className="text-gray-500 italic">No appointments today</p>
+          <p className="w-full bg-gray-50 my-1 p-1 text-gray-500 italic text-center">No appointments today</p>
         )}
       </div>
     </div>
