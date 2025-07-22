@@ -15,17 +15,26 @@ interface Service {
 const Index = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
+  const [minDate, setMinDate] = useState<string>("");
   const bookRef = useRef<HTMLDivElement | null>(null);
 
   const apiUrl = import.meta.env.VITE_API_BASE_URL;
-  const apiKey = import.meta.env.VITE_PUBLIC_API_KEY;
 
   useEffect(() => {
-    axios.get(`${apiUrl}/admin/services`, {
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-        }
-      }).then(response => {
+
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const yyyy = tomorrow.getFullYear();
+    const mm = String(tomorrow.getMonth() + 1).padStart(2, "0");
+    const dd = String(tomorrow.getDate()).padStart(2, "0");
+    const formattedDate = `${yyyy}-${mm}-${dd}`;
+
+    setMinDate(formattedDate);
+
+    axios.get(`${apiUrl}/services`)
+      .then(response => {
         setServices(response.data.data);
         setLoading(false);
       })
@@ -34,8 +43,6 @@ const Index = () => {
         setLoading(false);
       });
   }, []);
-
-  if (loading) return <p>Loading services...</p>;
 
   const handleScrollToBook = () => {
     scrollToRef(bookRef);
@@ -61,7 +68,7 @@ const Index = () => {
         <Services />
         {/* Booking Form */}
         <div ref={bookRef} className="toothline-bg-light py-10">
-          <BookingForm services={services} />
+          <BookingForm services={services} minDate={minDate} />
         </div>
       </main>
       {/* Footer */}

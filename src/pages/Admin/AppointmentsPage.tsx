@@ -1,8 +1,141 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Modal from '../../components/Modal';
+import { fetchAppointments, createAppointment, type AppointmentFilters, type FormData } from '../../api/appointments';
+import { fetchServices } from '../../api/services';
+import {fetchUsersByRole, type UsersFilters } from '../../api/users';
+interface Appointment {
+  id: number;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  serviceId: number;
+  serviceName: string;
+  appointmentDate: string;
+  appointmentTime: string;
+  notes: string;
+  dentistId: number;
+  dentistName: string;
+  status: string;
+}
+interface Service {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  durationMinutes: number;
+}
+interface Dentist {
+  id: number;
+  email: string;
+  name: string;
+  role: string;
+}
 const AppointmentsPage: React.FC = () => {
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [dentists, setDentists] = useState<Dentist[]>([]);
+  const [userFilters, setUserFilters] = useState<UsersFilters>({
+    role: ""
+  });
+  const [formData, setFormData] = useState<FormData>({
+      name: '',
+      email: '',
+      phoneNumber: '',
+      appointmentDate: '',
+      appointmentTime: '',
+      serviceId: '',
+      dentistId: '',
+      notes: ''
+  });
+  // const [totalPages, setTotalPages] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [filters, setFilters] = useState<AppointmentFilters>({
+    serviceId: "",
+    patientName: "",
+    appointmentDate: "",
+    page: 0,
+    size: 10
+  });
+
   const [openCreate, setOpenCreate] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
+
+  const defaultFormData: FormData = {
+        name: '',
+        email: '',
+        phoneNumber: '',
+        appointmentDate: '',
+        appointmentTime: '',
+        serviceId: '',
+        dentistId: '',
+        notes: ''
+    };
+
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFilters((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement >) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const getAppointments = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchAppointments(filters);
+      setAppointments(data);
+    } catch (error) {
+      console.error('Failed to fetch appointments', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getServices = async () => {
+    try {
+      const dataServices = await fetchServices();
+      setServices(dataServices);
+    } catch (error) {
+      console.error('Failed to fetch services', error);
+    }
+  }
+
+  const getDentists = async () => {
+    try {
+      userFilters.role = "DENTIST";
+      const dataDentists = await fetchUsersByRole(userFilters);
+      setDentists(dataDentists);
+    } catch (error) {
+      console.error('Failed to fetch dentists', error);
+    }
+  }
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await createAppointment(formData);
+      console.log('Success:', response.data);
+      setFormData(defaultFormData);
+      getAppointments();
+    } catch (err: any) {
+        console.error('Form submission error:', err);
+    }
+  };
+
+  useEffect(() => {
+    getAppointments();
+    getServices();
+    getDentists();
+  }, [filters]);
+
   return (
     <div className="w-full flex flex-wrap px-16 py-2">
       <div className="w-full flex flex-wrap">
@@ -16,68 +149,102 @@ const AppointmentsPage: React.FC = () => {
         </div>
 
         <div className="w-1/2 grid grid-cols-3 gap-3 text-sm">
-          <input type="date" className="rounded-md text-sm" />
-          <select id="serviceType" name="serviceType" className="rounded-md text-sm">
-              <option value="">Select Service</option>
-              <option value="Dental Checkup">Dental Checkup</option>
-              <option value="Teeth Cleaning">Teeth Cleaning</option>
-              <option value="Tooth Filling">Tooth Filling</option>
-              <option value="Root Canal">Root Canal</option>
-              <option value="Extraction">Extraction</option>
+          <input type="date" name="appointmentDate" onChange={handleFilterChange} value={filters.appointmentDate} className="rounded-md text-sm" />
+          <select id="serviceIdfilter" name="serviceId" onChange={handleFilterChange} value={filters.serviceId} className="rounded-md text-sm">
+                <option value="">Select Service</option>
+                {services?.length ? (
+                  services.map((service) => (
+                  <option key={service.id} value={service.id}>
+                  {service.name}
+                  </option>
+                  ))
+                ) : (
+                  <option value="" disabled>Add a Service</option>
+                )}
+              
           </select>
-          <input type="text" className="rounded-md text-sm" placeholder="e.g., Jane Doe" />
+          <input type="text" id="patientName" name="patientName" onChange={handleFilterChange} value={filters.patientName} className="rounded-md text-sm" placeholder="e.g., Jane Doe" />
         </div>
 
         {/* Create Appointment */}
         <Modal
           isOpen={openCreate}
           title="Create New Appointment"
-          confirmText="Create Appointment"
-          cancelText="Cancel"
           onClose={() => setOpenCreate(false)}
-          onConfirm={() => {
-              console.log('Appointment created!');
-            }}
           >
             <div>
               <div className="mb-4">
-                  <label className="block text-sm fw-500 toothline-text">Patient Name</label>
-                  <input type="text" id="patientName" name="patientName" className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
+                  <label className="block text-sm fw-500 toothline-text">Patient Name *</label>
+                  <input type="text" id="name" name="name" value={formData.name} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
               </div>
               <div className="mb-4">
-                  <label className="block text-sm fw-500 toothline-text">Date</label>
-                  <input type="date" id="appointmentDate" name="appointmentDate" className="mt-1 block w-full rounded-md text-sm" />
+                  <label className="block text-sm fw-500 toothline-text">Email *</label>
+                  <input type="text" id="email" name="email" value={formData.email} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
               </div>
               <div className="mb-4">
-                  <label className="block text-sm fw-500 toothline-text">Time</label>
-                  <input type="time" id="appointmentTime" name="appointmentTime" className="mt-1 block w-full rounded-md text-sm" />
+                  <label className="block text-sm fw-500 toothline-text">Phone Number *</label>
+                  <input type="text" id="phoneNumber" name="phoneNumber" value={formData.phoneNumber} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
+              </div>
+              <div className="mb-4 grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-sm fw-500 toothline-text">Date *</label>
+                  <input type="date" id="appointmentDate" name="appointmentDate" value={formData.appointmentDate} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm fw-500 toothline-text">Time *</label>
+                  <input type="time" id="appointmentTime" name="appointmentTime" value={formData.appointmentTime} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" />
+                </div>
               </div>
               <div className="mb-4">
-                  <label className="block text-sm fw-500 toothline-text">Service</label>
-                  <select id="serviceType" name="serviceType" className="mt-1 block w-full rounded-md text-sm">
+                  <label className="block text-sm fw-500 toothline-text">Service *</label>
+                  <select id="serviceId" name="serviceId" value={formData.serviceId} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm">
                       <option value="">Select Service</option>
-                      <option value="Dental Checkup">Dental Checkup</option>
-                      <option value="Teeth Cleaning">Teeth Cleaning</option>
-                      <option value="Tooth Filling">Tooth Filling</option>
-                      <option value="Root Canal">Root Canal</option>
-                      <option value="Extraction">Extraction</option>
+                      {services?.length ? (
+                        services.map((service) => (
+                        <option key={service.id} value={service.id}>
+                        {service.name}
+                        </option>
+                        ))
+                      ) : (
+                        <option value="" disabled>Add a Service</option>
+                      )}
                   </select>
               </div>
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Dentist</label>
-                  <select id="dentist" name="dentist" className="mt-1 block w-full rounded-md text-sm">
+                  <select id="dentistId" name="dentistId" value={formData.dentistId} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm">
                       <option value="">Select Dentist</option>
-                      <option value="Dr. Melissa Chen">Dr. Melissa Chen</option>
-                      <option value="Dr. James Wilson">Dr. James Wilson</option>
-                      <option value="Dr. Sarah Wilson">Dr. Sarah Wilson</option>
+                      {dentists?.length ? (
+                        dentists.map((dentist) => (
+                        <option key={dentist.id} value={dentist.id}>
+                        {dentist.name}
+                        </option>
+                        ))
+                      ) : (
+                        <option value="" disabled>Add a Dentist</option>
+                      )}
                   </select>
               </div>
               <div className="mb-4">
-                  <label className="block text-sm fw-500 toothline-text">Status</label>
-                  <select id="status" name="status" className="mt-1 block w-full rounded-md text-sm">
-                      <option value="pending">Pending</option>
-                      <option value="confirmed">Confirmed</option>
-                  </select>
+                <label className="block text-sm fw-500 toothline-text">Additional Notes</label>
+                <textarea name="notes" value={formData.notes} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" placeholder="Type here..." />
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setOpenCreate(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleFormSubmit}
+                  className="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700"
+                >
+                  Create Appointment
+                </button>
               </div>
             </div>
         </Modal>
@@ -86,12 +253,7 @@ const AppointmentsPage: React.FC = () => {
         <Modal
           isOpen={openEdit}
           title="Edit Appointment"
-          confirmText="Save changes"
-          cancelText="Cancel"
           onClose={() => setOpenEdit(false)}
-          onConfirm={() => {
-              console.log('Appointment updated!');
-            }}
           >
             <div>
               <div className="mb-4">
@@ -110,11 +272,15 @@ const AppointmentsPage: React.FC = () => {
                   <label className="block text-sm fw-500 toothline-text">Service</label>
                   <select id="serviceType" name="serviceType" className="mt-1 block w-full rounded-md text-sm">
                       <option value="">Select Service</option>
-                      <option value="Dental Checkup">Dental Checkup</option>
-                      <option value="Teeth Cleaning">Teeth Cleaning</option>
-                      <option value="Tooth Filling">Tooth Filling</option>
-                      <option value="Root Canal">Root Canal</option>
-                      <option value="Extraction">Extraction</option>
+                      {services?.length ? (
+                        services.map((service) => (
+                        <option key={service.id} value={service.id}>
+                        {service.name}
+                        </option>
+                        ))
+                      ) : (
+                        <option value="" disabled>Add a Service</option>
+                      )}
                   </select>
               </div>
               <div className="mb-4">
@@ -132,6 +298,22 @@ const AppointmentsPage: React.FC = () => {
                       <option value="pending">Pending</option>
                       <option value="confirmed">Confirmed</option>
                   </select>
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setOpenEdit(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700"
+                >
+                  Update Appointment
+                </button>
               </div>
             </div>
         </Modal>
@@ -152,53 +334,37 @@ const AppointmentsPage: React.FC = () => {
         </div>
 
         {/* Table Rows */}
-        <div className="w-full grid grid-cols-6 gap-2 px-3 py-2 toothline-bg-light shadow-sm text-sm my-1">
-          <p>John Smith</p>
-          <p>09:00 AM</p>
-          <p>Dental Checkup</p>
-          <p>Dr. Melissa Chen</p>
-          <p className="fw-500 toothline-success">Confirmed</p>
-          <div>
-            <button type="button" onClick={() => setOpenEdit(true)} className="toothline-text-accent fw-500">Edit</button>
-            <span className="toothline-error ml-3">Check-in</span>
-          </div>
-        </div>
-
-        <div className="w-full grid grid-cols-6 gap-2 px-3 py-2 toothline-bg-light shadow-sm text-sm my-1">
-          <p>Sarah Johnson</p>
-          <p>10:30 AM</p>
-          <p>Teeth Cleaning</p>
-          <p>Dr. James Wilson</p>
-          <p className="fw-500 toothline-text-primary">In Progress</p>
-          <div>
-            <button type="button" onClick={() => setOpenEdit(true)} className="toothline-text-accent fw-500">Edit</button>
-            <span className="toothline-success ml-3 fw-500">Complete</span>
-          </div>
-        </div>
-
-        <div className="w-full grid grid-cols-6 gap-2 px-3 py-2 toothline-bg-light shadow-sm text-sm my-1">
-          <p>Robert Garcia</p>
-          <p>11:45 AM</p>
-          <p>Tooth Filling</p>
-          <p>Dr. Sarah Wilson</p>
-          <p className="fw-500 toothline-error">Pending</p>
-          <div>
-            <button type="button" onClick={() => setOpenEdit(true)} className="toothline-text-accent fw-500">Edit</button>
-            <span className="toothline-success ml-3 fw-500">Confirm</span>
-          </div>
-        </div>
-
-        <div className="w-full grid grid-cols-6 gap-2 px-3 py-2 toothline-bg-light shadow-sm text-sm my-1">
-          <p>Emily White</p>
-          <p>02:00 PM</p>
-          <p>Root Canal</p>
-          <p>Dr. Melissa Chen</p>
-          <p className="fw-500 toothline-error">Canceled</p>
-          <div>
-            <button type="button" onClick={() => setOpenEdit(true)} className="toothline-text-accent fw-500">Edit</button>
-            <span className="toothline-error ml-3">Archive</span>
-          </div>
-        </div>
+        {appointments?.length ? (
+          appointments.map((appt) => (
+            <div key={appt.id} className="w-full grid grid-cols-6 gap-2 px-3 py-2 toothline-bg-light shadow-sm text-sm my-1">
+              <p>{appt.name}</p>
+              <p>{appt.appointmentTime}</p>
+              <p>{appt.serviceName}</p>
+              <p>{appt.dentistName ?? 'Unassigned'}</p>
+              <p className={`fw-500 ${(appt.status === 'CONFIRMED' || appt.status === 'COMPLETED') ? 'toothline-success'
+                    : appt.status === 'PENDING' ? 'text-yellow-500'
+                    : appt.status === 'IN PROGRESS' ? 'toothline-text-primary'
+                    : 'toothline-error' }`}>
+                {appt.status}
+              </p>
+              <div>
+                <button type="button" onClick={() => setOpenEdit(true)} className="toothline-text-accent fw-500">Edit</button>
+                <span className={`ml-3 fw-500 ${appt.status === 'CONFIRMED' ? 'text-orange-500'
+                    : appt.status === 'PENDING' ? 'text-yellow-500'
+                    : appt.status === 'IN PROGRESS' ? 'toothline-success'
+                    : 'toothline-error' }`}>
+                  {appt.status === 'CONFIRMED' ? 'Check-in'
+                    : appt.status === 'PENDING' ? 'Confirm'
+                    : appt.status === 'IN PROGRESS' ? 'Complete'
+                    : 'Archive'}
+                </span>
+              </div>
+            </div>
+          ))
+        ) : (
+          <p className="w-full bg-gray-50 my-1 p-1 text-gray-500 italic text-center">No appointments yet.</p>
+        )}
+        
       </div>
     </div>
   );
