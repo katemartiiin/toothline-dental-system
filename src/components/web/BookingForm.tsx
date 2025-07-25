@@ -17,8 +17,9 @@ interface FormData {
 }
 type BookingFormProps = {
   services: ServiceItem[];
+  minDate: string;
 };
-function BookingForm({ services }: BookingFormProps) {
+function BookingForm({ services, minDate }: BookingFormProps) {
     const [formData, setFormData] = useState<FormData>({
         name: '',
         email: '',
@@ -99,7 +100,7 @@ function BookingForm({ services }: BookingFormProps) {
             <div className="grid md:grid-cols-2 grid-cols-1 gap-4">
                 <div>
                     <label className="text-sm toothline-text">Preferred Date *</label>
-                    <input type="date" name="appointmentDate" value={formData.appointmentDate} onChange={handleChange} className="w-full my-1 bg-gray-100 px-3 py-2 rounded-md border border-gray-400" />
+                    <input type="date" name="appointmentDate" value={formData.appointmentDate} onChange={handleChange} className="w-full my-1 bg-gray-100 px-3 py-2 rounded-md border border-gray-400" min={minDate} />
                 </div>
                 <div>
                     <label className="text-sm toothline-text">Preferred Time *</label>

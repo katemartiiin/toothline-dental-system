@@ -4,20 +4,20 @@ type ModalProps = {
   isOpen: boolean;
   title: string;
   children?: ReactNode;
-  confirmText?: string;
-  cancelText?: string;
+  // confirmText?: string;
+  // cancelText?: string;
   onClose: () => void;
-  onConfirm?: () => void;
+  // onConfirm?: () => void;
 };
 
 const Modal: React.FC<ModalProps> = ({
   isOpen,
   title,
   children,
-  confirmText = 'Confirm',
-  cancelText = 'Cancel',
+  // confirmText = 'Confirm',
+  // cancelText = 'Cancel',
   onClose,
-  onConfirm,
+  // onConfirm,
 }) => {
   if (!isOpen) return null;
 
@@ -32,7 +32,7 @@ const Modal: React.FC<ModalProps> = ({
           <h2 className="text-lg font-semibold mb-4">{title}</h2>
           <div className="text-gray-700 mb-6">{children}</div>
 
-          <div className="flex justify-end space-x-2">
+          {/* <div className="flex justify-end space-x-2">
             <button
               onClick={onClose}
               className="px-4 py-2 text-gray-600 hover:text-gray-800"
@@ -40,15 +40,12 @@ const Modal: React.FC<ModalProps> = ({
               {cancelText}
             </button>
             <button
-              onClick={() => {
-                onConfirm?.();
-                onClose();
-              }}
+              onClick={onConfirm}
               className="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700"
             >
               {confirmText}
             </button>
-          </div>
+          </div> */}
         </div>
       </div>
     </>
