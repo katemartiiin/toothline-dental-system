@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import Modal from '../../components/Modal';
 import { Pencil, Trash } from 'lucide-react';
-import { fetchSchedules, deleteSchedule, createSchedule, 
-  type DentistSchedule, type ScheduleForm, type ScheduleDay, scheduleDays } from '../../api/schedules';
+import { fetchSchedules, deleteSchedule, createSchedule, updateSchedule, 
+  type DentistSchedule, type ScheduleForm, type UpdateScheduleForm, type ScheduleDay, scheduleDays } from '../../api/schedules';
 import {fetchUsersByRole, type UsersFilters } from '../../api/users';
 interface Dentist {
   id: number;
@@ -26,7 +26,16 @@ const DentistSchedulesPage: React.FC = () => {
     status: 'AVAILABLE',
   }
 
+  const defaultUpdateSchedForm = {
+    id: '',
+    schedDay: '',
+    startTime: '',
+    endTime: '',
+    status: 'AVAILABLE',
+  }
+
   const [scheduleForm, setScheduleForm] = useState<ScheduleForm>(defaultScheduleForm);
+  const [updateSchedForm, setUpdateScheduleForm] = useState<UpdateScheduleForm>(defaultUpdateSchedForm);
 
   const [schedules, setSchedules] = useState<GroupedSchedules | null>(null);
 
@@ -41,7 +50,20 @@ const DentistSchedulesPage: React.FC = () => {
     role: ''
   });
 
-  const selectedSched = useRef(null)
+  const selectedSchedId = useRef(null)
+  const selectedSchedule = useRef(defaultUpdateSchedForm);
+
+  const setAndEditSched = (sched: any, isOpen: boolean) => {
+    selectedSchedule.current = sched;
+    setUpdateScheduleForm({
+      id: sched.id,
+      schedDay: sched.schedDay,
+      startTime: sched.startTime,
+      endTime: sched.endTime,
+      status: sched.status
+    })
+    setOpenEdit(isOpen);
+  }
 
   const fetchDentistSchedules = async (dentistId: number) => {
     try {
@@ -60,6 +82,14 @@ const DentistSchedulesPage: React.FC = () => {
     }));
   };
 
+  const handleUpdateSchedFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement >) => {
+    const { name, value } = e.target;
+    setUpdateScheduleForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
   const handleDentistChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedId = Number(event.target.value);
     const dentist = dentists.find(d => d.id === selectedId) || null;
@@ -72,7 +102,7 @@ const DentistSchedulesPage: React.FC = () => {
   };
 
   const handleDeleteSched = (scheduleId: number | any) => {
-    selectedSched.current = scheduleId;
+    selectedSchedId.current = scheduleId;
     setOpenDelete(true);
   };
 
@@ -88,7 +118,7 @@ const DentistSchedulesPage: React.FC = () => {
 
   const deleteDentistSched = async () => {
     try {
-      const dataDelete = await deleteSchedule(selectedSched.current);
+      const dataDelete = await deleteSchedule(selectedSchedId.current);
       setOpenDelete(false);
       fetchDentistSchedules(selectedDentist?.id);
     } catch (error) {
@@ -103,6 +133,16 @@ const DentistSchedulesPage: React.FC = () => {
       fetchDentistSchedules(selectedDentist?.id);
     } catch (error) {
       console.error('Failed to create schedule', error);
+    }
+  }
+
+  const updateDentistSched = async () => {
+    try {
+      const dataUpdate = await updateSchedule(updateSchedForm);
+      setUpdateScheduleForm(defaultUpdateSchedForm);
+      fetchDentistSchedules(selectedDentist?.id);
+    } catch (error) {
+      console.error('Failed to update schedule', error);
     }
   }
 
@@ -170,7 +210,7 @@ const DentistSchedulesPage: React.FC = () => {
                       ))}
                   </select>
               </div>
-              <div className="mb-4">
+              {/* <div className="mb-4">
                 <label className="flex items-center space-x-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -180,7 +220,7 @@ const DentistSchedulesPage: React.FC = () => {
                   />
                   <span className="text-gray-700">All Day</span>
                 </label>
-              </div>
+              </div> */}
               <div className="mb-4 grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-sm fw-500 toothline-text">Start Time</label>
@@ -226,9 +266,9 @@ const DentistSchedulesPage: React.FC = () => {
           >
             <div>
               <div className="mb-4">
-                  <label className="block text-sm fw-500 toothline-text">Day</label>
+                  <label className="block text-sm fw-500 toothline-text">{selectedSchedule.current.schedDay}</label>
               </div>
-              <div className="mb-4">
+              {/* <div className="mb-4">
                 <label className="flex items-center space-x-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -238,20 +278,20 @@ const DentistSchedulesPage: React.FC = () => {
                   />
                   <span className="text-gray-700">All Day</span>
                 </label>
-              </div>
+              </div> */}
               <div className="mb-4 grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-sm fw-500 toothline-text">Start Time</label>
-                  <input type="time" id="startTime" name="startTime" className="mt-1 block w-full rounded-md text-sm" />
+                  <input type="time" id="startTimeUp" name="startTime" value={updateSchedForm.startTime} onChange={handleUpdateSchedFormChange} className="mt-1 block w-full rounded-md text-sm" />
                 </div>
                 <div>
                   <label className="block text-sm fw-500 toothline-text">End Time</label>
-                  <input type="time" id="endTime" name="endTime" className="mt-1 block w-full rounded-md text-sm" />
+                  <input type="time" id="endTimeUp" name="endTime" value={updateSchedForm.endTime} onChange={handleUpdateSchedFormChange} className="mt-1 block w-full rounded-md text-sm" />
                 </div>
               </div>
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Status</label>
-                  <select id="status" name="status" className="mt-1 block w-full rounded-md text-sm">
+                  <select id="status" name="status" value={updateSchedForm.status} onChange={handleUpdateSchedFormChange} className="mt-1 block w-full rounded-md text-sm">
                       <option value="available">Available</option>
                       <option value="break">Break</option>
                       <option value="break">Unavailable</option>
@@ -268,6 +308,7 @@ const DentistSchedulesPage: React.FC = () => {
                 </button>
                 <button
                   type="button"
+                  onClick={() => updateDentistSched()}
                   className="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700"
                 >
                   Update Schedule
@@ -318,7 +359,7 @@ const DentistSchedulesPage: React.FC = () => {
                   <p className={`fw-500 my-auto rounded text-center ${(mon.status === 'AVAILABLE') ? 'toothline-success bg-green-100'
                     : 'toothline-error bg-red-100' }`}>{mon.status.charAt(0) + mon.status.slice(1).toLowerCase()}</p>
                   <div className="flex space-x-2 justify-end">
-                    <button type="button" onClick={() => setOpenEdit(true)} className="toothline-accent hover:toothline-primary p-1 rounded"><Pencil color="White" size={10} /></button>
+                    <button type="button" onClick={() => setAndEditSched(mon, true)} className="toothline-accent hover:toothline-primary p-1 rounded"><Pencil color="White" size={10} /></button>
                     <button type="button" onClick={() => handleDeleteSched(mon.id)} className="toothline-bg-error hover:bg-red-300 p-1 rounded"><Trash color="White" size={10} /></button>
                   </div>
                 </div>
@@ -341,7 +382,7 @@ const DentistSchedulesPage: React.FC = () => {
                   <p className={`fw-500 my-auto rounded text-center ${(tues.status === 'AVAILABLE') ? 'toothline-success bg-green-100'
                     : 'toothline-error bg-red-100' }`}>{tues.status.charAt(0) + tues.status.slice(1).toLowerCase()}</p>
                   <div className="flex space-x-2 justify-end">
-                    <button type="button" onClick={() => setOpenEdit(true)} className="toothline-accent hover:toothline-primary p-1 rounded"><Pencil color="White" size={10} /></button>
+                    <button type="button" onClick={() => setAndEditSched(tues, true)} className="toothline-accent hover:toothline-primary p-1 rounded"><Pencil color="White" size={10} /></button>
                     <button type="button" onClick={() => handleDeleteSched(tues.id)} className="toothline-bg-error hover:bg-red-300 p-1 rounded"><Trash color="White" size={10} /></button>
                   </div>
                 </div>
@@ -364,7 +405,7 @@ const DentistSchedulesPage: React.FC = () => {
                   <p className={`fw-500 my-auto rounded text-center ${(wed.status === 'AVAILABLE') ? 'toothline-success bg-green-100'
                     : 'toothline-error bg-red-100' }`}>{wed.status.charAt(0) + wed.status.slice(1).toLowerCase()}</p>
                   <div className="flex space-x-2 justify-end">
-                    <button type="button" onClick={() => setOpenEdit(true)} className="toothline-accent hover:toothline-primary p-1 rounded"><Pencil color="White" size={10} /></button>
+                    <button type="button" onClick={() => setAndEditSched(wed, true)} className="toothline-accent hover:toothline-primary p-1 rounded"><Pencil color="White" size={10} /></button>
                     <button type="button" onClick={() => handleDeleteSched(wed.id)} className="toothline-bg-error hover:bg-red-300 p-1 rounded"><Trash color="White" size={10} /></button>
                   </div>
                 </div>
@@ -387,7 +428,7 @@ const DentistSchedulesPage: React.FC = () => {
                   <p className={`fw-500 my-auto rounded text-center ${(thurs.status === 'AVAILABLE') ? 'toothline-success bg-green-100'
                     : 'toothline-error bg-red-100' }`}>{thurs.status.charAt(0) + thurs.status.slice(1).toLowerCase()}</p>
                   <div className="flex space-x-2 justify-end">
-                    <button type="button" onClick={() => setOpenEdit(true)} className="toothline-accent hover:toothline-primary p-1 rounded"><Pencil color="White" size={10} /></button>
+                    <button type="button" onClick={() => setAndEditSched(thurs, true)} className="toothline-accent hover:toothline-primary p-1 rounded"><Pencil color="White" size={10} /></button>
                     <button type="button" onClick={() => handleDeleteSched(thurs.id)} className="toothline-bg-error hover:bg-red-300 p-1 rounded"><Trash color="White" size={10} /></button>
                   </div>
                 </div>
@@ -410,7 +451,7 @@ const DentistSchedulesPage: React.FC = () => {
                   <p className={`fw-500 my-auto rounded text-center ${(fri.status === 'AVAILABLE') ? 'toothline-success bg-green-100'
                     : 'toothline-error bg-red-100' }`}>{fri.status.charAt(0) + fri.status.slice(1).toLowerCase()}</p>
                   <div className="flex space-x-2 justify-end">
-                    <button type="button" onClick={() => setOpenEdit(true)} className="toothline-accent hover:toothline-primary p-1 rounded"><Pencil color="White" size={10} /></button>
+                    <button type="button" onClick={() => setAndEditSched(fri, true)} className="toothline-accent hover:toothline-primary p-1 rounded"><Pencil color="White" size={10} /></button>
                     <button type="button" onClick={() => handleDeleteSched(fri.id)} className="toothline-bg-error hover:bg-red-300 p-1 rounded"><Trash color="White" size={10} /></button>
                   </div>
                 </div>
@@ -433,7 +474,7 @@ const DentistSchedulesPage: React.FC = () => {
                   <p className={`fw-500 my-auto rounded text-center ${(sat.status === 'AVAILABLE') ? 'toothline-success bg-green-100'
                     : 'toothline-error bg-red-100' }`}>{sat.status.charAt(0) + sat.status.slice(1).toLowerCase()}</p>
                   <div className="flex space-x-2 justify-end">
-                    <button type="button" onClick={() => setOpenEdit(true)} className="toothline-accent hover:toothline-primary p-1 rounded"><Pencil color="White" size={10} /></button>
+                    <button type="button" onClick={() => setAndEditSched(sat, true)} className="toothline-accent hover:toothline-primary p-1 rounded"><Pencil color="White" size={10} /></button>
                     <button type="button" onClick={() => handleDeleteSched(sat.id)} className="toothline-bg-error hover:bg-red-300 p-1 rounded"><Trash color="White" size={10} /></button>
                   </div>
                 </div>
@@ -456,7 +497,7 @@ const DentistSchedulesPage: React.FC = () => {
                   <p className={`fw-500 my-auto rounded text-center ${(sun.status === 'AVAILABLE') ? 'toothline-success bg-green-100'
                     : 'toothline-error bg-red-100' }`}>{sun.status.charAt(0) + sun.status.slice(1).toLowerCase()}</p>
                   <div className="flex space-x-2 justify-end">
-                    <button type="button" onClick={() => setOpenEdit(true)} className="toothline-accent hover:toothline-primary p-1 rounded"><Pencil color="White" size={10} /></button>
+                    <button type="button" onClick={() => setAndEditSched(sun, true)} className="toothline-accent hover:toothline-primary p-1 rounded"><Pencil color="White" size={10} /></button>
                     <button type="button" onClick={() => handleDeleteSched(sun.id)} className="toothline-bg-error hover:bg-red-300 p-1 rounded"><Trash color="White" size={10} /></button>
                   </div>
                 </div>

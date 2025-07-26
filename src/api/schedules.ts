@@ -34,6 +34,14 @@ export interface ScheduleForm {
   status: string;
 }
 
+export interface UpdateScheduleForm {
+  id: string;
+  schedDay: string;
+  startTime: string;
+  endTime: string;
+  status: string;
+}
+
 export const fetchSchedules = async (dentistId: number | any) => {
   const res = await axios.get('/admin/schedules/' + dentistId + '/fetch');
   return res.data;
@@ -41,6 +49,11 @@ export const fetchSchedules = async (dentistId: number | any) => {
 
 export const createSchedule = async (scheduleForm : ScheduleForm) => {
   const res = await axios.post('/admin/schedules', scheduleForm);
+  return res.data;
+}
+
+export const updateSchedule = async (updateScheduleForm: UpdateScheduleForm) => {
+  const res = await axios.put('/admin/schedules/' + updateScheduleForm.id + '/update', updateScheduleForm);
   return res.data;
 }
 
