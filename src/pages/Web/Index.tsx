@@ -1,11 +1,48 @@
-import { useRef } from 'react';
+import axios from 'axios';
+import { useRef, useState, useEffect } from 'react';
 import { scrollToRef } from '../../utils/scrollToRef';
 import Header from '../../components/web/Header';
 import Footer from '../../components/web/Footer';
 import Services from '../../components/web/Services';
 import BookingForm from '../../components/web/BookingForm';
+interface Service {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+}
+
 const Index = () => {
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [minDate, setMinDate] = useState<string>("");
   const bookRef = useRef<HTMLDivElement | null>(null);
+
+  const apiUrl = import.meta.env.VITE_API_BASE_URL;
+
+  useEffect(() => {
+
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const yyyy = tomorrow.getFullYear();
+    const mm = String(tomorrow.getMonth() + 1).padStart(2, "0");
+    const dd = String(tomorrow.getDate()).padStart(2, "0");
+    const formattedDate = `${yyyy}-${mm}-${dd}`;
+
+    setMinDate(formattedDate);
+
+    axios.get(`${apiUrl}/services`)
+      .then(response => {
+        setServices(response.data.data);
+        setLoading(false);
+      })
+      .catch(error => {
+        console.error('Failed to fetch services:', error);
+        setLoading(false);
+      });
+  }, []);
 
   const handleScrollToBook = () => {
     scrollToRef(bookRef);
@@ -31,7 +68,7 @@ const Index = () => {
         <Services />
         {/* Booking Form */}
         <div ref={bookRef} className="toothline-bg-light py-10">
-          <BookingForm />
+          <BookingForm services={services} minDate={minDate} />
         </div>
       </main>
       {/* Footer */}

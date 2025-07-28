@@ -1,9 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate  } from 'react-router-dom';
 import { LogOut, UserRoundPen } from 'lucide-react';
+import axios from '../../lib/axios';
+import { useAuth } from '../../context/AuthContext';
 type HeaderProps = {
   title: string;
 };
 const Header: React.FC<HeaderProps> = ({ title }) => {
+  const { userName, logout } = useAuth();
+  const navigate = useNavigate();
+
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -17,6 +23,17 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await axios.post('/auth/logout');
+    } catch (err) {
+      console.error('Logout failed or already logged out:', err);
+    } finally {
+      logout();
+      navigate('/admin/login');
+    }
+  };
 
   return (
     <header className="bg-white border-b px-20 py-4 shadow-sm flex items-center justify-between">
@@ -33,7 +50,7 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
             className="w-9 h-9 rounded-full border"
           />
           <span className="hidden md:inline text-sm font-medium text-gray-700">
-            Admin
+            {userName}
           </span>
         </button>
 
@@ -50,9 +67,7 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
               </li>
               <li>
                 <button
-                  onClick={() => {
-                    setOpen(false);
-                  }}
+                  onClick={handleLogout}
                   className="flex w-full text-left px-4 py-2 hover:bg-gray-100"
                 >
                   <LogOut size={15} className="mr-2 my-auto" /> Logout

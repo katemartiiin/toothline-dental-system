@@ -1,4 +1,50 @@
+import { useEffect, useState } from 'react';
+import { fetchDashboardData } from '../../api/dashboard';
+interface Patient {
+  id: number;
+  name: string;
+  email: string;
+  phoneNumber: string;
+}
+interface Service {
+  id: number;
+  name: string;
+  description: string;
+  durationMinutes: number;
+  price: number;
+}
+interface Dentist {
+  id: number;
+  name: string;
+  email: string;
+}
+interface Appointment {
+  id: number;
+  patient: Patient;
+  service: Service;
+  dentist: Dentist;
+  notes: string;
+  appointmentDate: string;
+  appointmentTime: string;
+  status: string;
+}
+interface DashboardData {
+  appointmentsToday: Appointment[];
+  totalPatients: number;
+}
+
 const DashboardPage: React.FC = () => {
+  const [dashboard, setDashboard] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetchDashboardData().then(setDashboard).catch(console.error);
+  }, []);
+
+  // if (loading) return <p>Loading dashboard...</p>;
+  // if (error) return <p className="text-red-500">{error}</p>;
+
   return (
     <div className="w-full flex flex-wrap px-16 py-2">
 
@@ -7,7 +53,7 @@ const DashboardPage: React.FC = () => {
         <div className="w-full flex flex-wrap px-10 py-7 bg-white rounded-lg shadow-md">
           <div className="w-full md:w-1/2 h-24">
             <h4 className="fw-500 toothline-text">Today's Appointment</h4>
-            <p className="text-2xl fw-700 my-2">12</p>
+            <p className="text-2xl fw-700 my-2">{dashboard?.appointmentsToday.length}</p>
           </div>
           <div className="w-1/2">
             <span className="float-right">
@@ -19,7 +65,7 @@ const DashboardPage: React.FC = () => {
         <div className="w-full flex flex-wrap px-10 py-7 bg-white rounded-lg shadow-md">
           <div className="w-full md:w-1/2 h-24">
             <h4 className="fw-500 toothline-text">Total Patients</h4>
-            <p className="text-2xl fw-700 my-2">1,234</p>
+            <p className="text-2xl fw-700 my-2">{dashboard?.totalPatients}</p>
           </div>
           <div className="w-1/2">
             <span className="float-right">
@@ -45,32 +91,25 @@ const DashboardPage: React.FC = () => {
         </div>
 
         {/* Table Rows */}
-        <div className="w-full grid grid-cols-6 gap-2 px-3 py-2 toothline-bg-light shadow-sm text-sm my-1">
-          <p>John Smith</p>
-          <p>09:00 AM</p>
-          <p>Dental Checkup</p>
-          <p>Dr. Melissa Chen</p>
-          <p className="fw-500 toothline-success">Confirmed</p>
-          <p className="fw-500 toothline-text-accent">View<span className="toothline-error ml-3">Check-in</span></p>
-        </div>
-
-        <div className="w-full grid grid-cols-6 gap-2 px-3 py-2 toothline-bg-light shadow-sm text-sm my-1">
-          <p>Sarah Johnson</p>
-          <p>10:30 AM</p>
-          <p>Teeth Cleaning</p>
-          <p>Dr. James Wilson</p>
-          <p className="fw-500 toothline-text-primary">In Progress</p>
-          <p className="fw-500 toothline-text-accent">View<span className="toothline-success ml-3">Complete</span></p>
-        </div>
-
-        <div className="w-full grid grid-cols-6 gap-2 px-3 py-2 toothline-bg-light shadow-sm text-sm my-1">
-          <p>Robert Garcia</p>
-          <p>11:45 AM</p>
-          <p>Tooth Filling</p>
-          <p>Dr. Sarah Wilson</p>
-          <p className="fw-500 toothline-error">Pending</p>
-          <p className="fw-500 toothline-text-accent">View<span className="toothline-success ml-3">Confirm</span></p>
-        </div>
+        {dashboard?.appointmentsToday.length ? (
+          dashboard.appointmentsToday.map((appt) => (
+            <div
+              key={appt.id}
+              className="w-full grid grid-cols-6 gap-2 px-3 py-2 toothline-bg-light shadow-sm text-sm my-1"
+            >
+              <p>{appt.patient.name}</p>
+              <p>{appt.appointmentTime}</p>
+              <p>{appt.service.name}</p>
+              <p>{appt.dentist.name}</p>
+              <p className="fw-500 toothline-success">{appt.status}</p>
+              <p className="fw-500 toothline-text-accent">
+                View <span className="toothline-error ml-3">Check-in</span>
+              </p>
+            </div>
+          ))
+        ) : (
+          <p className="w-full bg-gray-50 my-1 p-1 text-gray-500 italic text-center">No appointments today</p>
+        )}
       </div>
     </div>
   );

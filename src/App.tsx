@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import ProtectedRoute from './components/ProtectedRoute';
 import Index from './pages/Web/Index';
 import LoginPage from './pages/Admin/LoginPage';
 import AdminLayout from './components/layout/AdminLayout';
@@ -17,13 +18,13 @@ const App: React.FC = () => {
         <Route path="/" element={<Index />} />
         <Route path="/admin/login" element={<LoginPage />} />
         <Route path="/admin" element={<AdminLayout />}>
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="appointments" element={<AppointmentsPage />} />
-          <Route path="schedules" element={<DentistSchedulesPage />} />
-          <Route path="services" element={<ServicesPage />} />
-          <Route path="patients" element={<PatientsPage />} />
-          <Route path="security" element={<SecurityPage />} />
-          <Route path="profile" element={<UserProfilePage />} />
+          <Route path="dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+          <Route path="appointments" element={<ProtectedRoute><AppointmentsPage /></ProtectedRoute>} />
+          <Route path="schedules" element={<ProtectedRoute><DentistSchedulesPage /></ProtectedRoute>} />
+          <Route path="services" element={<ProtectedRoute><ServicesPage /></ProtectedRoute>} />
+          <Route path="patients" element={<ProtectedRoute><PatientsPage /></ProtectedRoute>} />
+          <Route path="security" element={<ProtectedRoute requiredRole="ADMIN"><SecurityPage /></ProtectedRoute>} />
+          <Route path="profile" element={<ProtectedRoute><UserProfilePage /></ProtectedRoute>} />
         </Route>
       </Routes>
     </Router>

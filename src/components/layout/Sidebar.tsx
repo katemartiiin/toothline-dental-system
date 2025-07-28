@@ -1,4 +1,6 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate  } from 'react-router-dom';
+import axios from '../../lib/axios';
+import { useAuth } from '../../context/AuthContext';
 import logo from '../../assets/logo-admin.png';
 import {
   CalendarCheck,
@@ -11,15 +13,24 @@ import {
 } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
+  const { userRole, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await axios.post('/auth/logout');
+    } catch (err) {
+      console.error('Logout failed or already logged out:', err);
+    } finally {
+      logout();
+      navigate('/admin/login');
+    }
+  };
+
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     `flex px-4 py-2 rounded hover:toothline-text hover:bg-teal-100 ${
       isActive ? 'toothline-primary font-semibold text-white' : ''
     }`;
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    window.location.href = '/login';
-  };
 
   return (
     <aside className="fixed w-64 bg-white border-r p-4 flex flex-col h-screen font-montserrat">
@@ -41,12 +52,13 @@ const Sidebar: React.FC = () => {
         <NavLink to="/admin/patients" className={linkClass}>
           <UsersRound size={20} className="mr-2 my-auto" /> Patients
         </NavLink>
-        <NavLink to="/admin/security" className={linkClass}>
-          <Settings size={20} className="mr-2 my-auto" /> Security
-        </NavLink>
+        {userRole === 'ADMIN' && (
+          <NavLink to="/admin/security" className={linkClass}>
+            <Settings size={20} className="mr-2 my-auto" /> Security
+          </NavLink>
+        )}
       </div>
 
-      {/* Logout button fixed at the bottom */}
       <div className="pt-4 border-t mt-4">
         <button
           onClick={handleLogout}
