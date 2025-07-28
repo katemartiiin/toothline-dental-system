@@ -13,8 +13,7 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     try {
       const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/auth/login`, credentials);
-      const token = res.data.token;
-      login(token);
+      login(res.data);
       navigate('/admin/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed');

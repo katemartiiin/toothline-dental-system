@@ -1,55 +1,109 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Modal from '../../components/Modal';
+import ResetPassword from '../../components/security/ResetPassword';
+import AuditLogs from '../../components/security/AuditLogs';
+import { fetchUsersByRole, createUser, type UserForm, type User, type UsersFilters} from '../../api/users';
+import { updateUserAsAdmin, type UpdateUserForm } from '../../api/security';
+
 const SecurityPage: React.FC = () => {
   const [openCreate, setOpenCreate] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [openLock, setOpenLock] = useState(false);
+
+  const [users, setUsers] = useState<User[]>([]);
+  const [userFilters, setUserFilters] = useState<UsersFilters>({
+    role: ""
+  });
+
+  const defaultUserForm = {
+    name: '',
+    email: '',
+    role: ''
+  }
+
+  const defaultUserUpdateForm = {
+    role: '',
+    resetPassword: false,
+    locked: false
+  }
+
+  const [userForm, setUserForm] = useState<UserForm>(defaultUserForm);
+
+  const [updateUserForm, setUpdateUserForm] = useState<UpdateUserForm>(defaultUserUpdateForm);
+  const [user, setUser] = useState<User | any>();
+
+  const handleUserForm = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement >) => {
+    const { name, value } = e.target;
+    setUserForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleUpdateUserRole = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement >) => {
+    const { name, value } = e.target;
+    setUpdateUserForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const getUsers = async() => {
+    try {
+      const res = await fetchUsersByRole(userFilters);
+      setUsers(res);
+    } catch (error) {
+      console.log('Failed to fetch users', error)
+    }
+  };
+
+  const handleUserUpdate = (user: User | any, type: string) => {
+    setUser(user);
+
+    if (type == 'edit') {
+      updateUserForm.role = user.role;
+      updateUserForm.locked = false;
+      setOpenEdit(true);
+    } else {
+      updateUserForm.role = '';
+      updateUserForm.locked = true;
+      setOpenLock(true);
+    }
+  };
+
+  const createNewUser = async () => {
+    try {
+      const res = await createUser(userForm);
+      setUserForm(defaultUserForm);
+      getUsers();
+    } catch (error) {
+      console.error('Failed to create user', error);
+    }
+  };
+
+  const updateUserData = async () => {
+    try {
+      const res = await updateUserAsAdmin(user.id, updateUserForm);
+      setUpdateUserForm(defaultUserUpdateForm);
+      setOpenEdit(false);
+      setOpenLock(false);
+      getUsers();
+    }
+    catch (error) {
+      console.error('Failed to update user', error);
+    }
+  };
+
+  useEffect(() => {
+    getUsers();
+  }, [userFilters]);
   return (
     <div className="w-full flex flex-wrap px-16 py-2">
 
       {/* Cards */}
       <div className="w-full grid grid-cols-2 gap-4">
-        <div className="w-full flex flex-wrap px-10 py-7 bg-white rounded-lg shadow-md">
-         <h4 className="fw-500">Change Password</h4>
-         <div className="w-full text-sm my-5">
-            <div className="mb-4">
-                <label className="block text-sm fw-500 toothline-text">Current Password</label>
-                <input type="password" id="currentPassword" name="currentPassword" className="mt-1 block w-full rounded-md text-sm" placeholder="Enter current password" />
-            </div>
-            <div className="mb-4">
-                <label className="block text-sm fw-500 toothline-text">New Password</label>
-                <input type="password" id="newPassword" name="newPassword" className="mt-1 block w-full rounded-md text-sm" placeholder="Enter new password" />
-            </div>
-            <div className="mb-4">
-                <label className="block text-sm fw-500 toothline-text">Confirm Password</label>
-                <input type="password" id="confirmPassword" name="confirmPassword" className="mt-1 block w-full rounded-md text-sm" placeholder="Confirm new password" />
-            </div>
-
-            <div className="text-right">
-                <button type="button"className="px-4 py-2 text-sm toothline-accent text-white rounded hover:toothline-primary">
-                  Update Password
-                </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="w-full flex flex-wrap px-10 py-7 bg-white rounded-lg shadow-md">
-         <div>
-            <h4 className="fw-500">Audit Log (Recent Activities)</h4>
-            <div className="w-full text-sm space-y-3 my-5">
-              <p>[2025-06-28 14:30] Admin User changed password.</p>
-              <p>[2025-06-28 14:30] Dr. Melissa Chen updated schedule #1.</p>
-              <p>[2025-06-28 14:30] New service "Teeth Whitening" added.</p>
-              <p>[2025-06-28 14:30] Patient PT-1001 record updated.</p>
-            </div>
-         </div>
-         <div className="w-full flex items-end justify-end">
-              <button type="button"className="px-4 py-2 text-sm toothline-text-accent fw-600">
-                View Full Audit Log
-              </button>
-          </div>
-        </div>
-
+        <ResetPassword users={users} />
+        <AuditLogs />
       </div>
 
       {/* Table */}
@@ -76,63 +130,61 @@ const SecurityPage: React.FC = () => {
         </div>
 
         {/* Table Rows */}
-        <div className="w-full grid grid-cols-4 gap-2 px-3 py-2 toothline-bg-light shadow-sm text-sm my-1">
-          <p>Admin User</p>
-          <p>admin@toothline.com</p>
-          <p className="toothline-text-primary">Admin</p>
-          <div className="space-x-3">
-            <button type="button" onClick={() => setOpenEdit(true)} className="toothline-text-accent fw-500">Edit Role</button>
+        {users?.length ? (
+          users.map((user) => (
+          <div key={user.id} className="w-full grid grid-cols-4 gap-2 px-3 py-2 toothline-bg-light shadow-sm text-sm my-1">
+            <p>{user.name}</p>
+            <p>{user.email}</p>
+            <p className="toothline-text-primary">{user.role}</p>
+            <div className="space-x-3">
+              <button type="button" onClick={() => handleUserUpdate(user, 'edit')} className="toothline-text-accent fw-500">Edit Role</button>
+              <button type="button" onClick={() => handleUserUpdate(user, 'lock')} className="toothline-error fw-500">Lock</button>
+            </div>
           </div>
-        </div>
-
-        <div className="w-full grid grid-cols-4 gap-2 px-3 py-2 toothline-bg-light shadow-sm text-sm my-1">
-          <p>Dr. Melissa Chen</p>
-          <p>melissa.c@toothline.com</p>
-          <p className="toothline-success">Dentist</p>
-          <div className="space-x-3">
-            <button type="button" onClick={() => setOpenEdit(true)} className="toothline-text-accent fw-500">Edit Role</button>
-            <button type="button" onClick={() => setOpenLock(true)} className="toothline-error fw-500">Lock</button>
-          </div>
-        </div>
-
-        <div className="w-full grid grid-cols-4 gap-2 px-3 py-2 toothline-bg-light shadow-sm text-sm my-1">
-          <p>Sarah Reception</p>
-          <p>sarah.r@toothline.com</p>
-          <p className="toothline-error">Staff</p>
-          <div className="space-x-3">
-            <button type="button" onClick={() => setOpenEdit(true)} className="toothline-text-accent fw-500">Edit Role</button>
-            <button type="button" onClick={() => setOpenLock(true)} className="toothline-error fw-500">Lock</button>
-          </div>
-        </div>
-
+          ))
+        ) : (
+          <p className="w-full bg-gray-50 my-1 p-1 text-gray-500 italic text-center">No users added yet.</p>
+        )}
 
         {/* Create User */}
           <Modal
             isOpen={openCreate}
             title="Create New User"
-            confirmText="Create User"
-            cancelText="Cancel"
             onClose={() => setOpenCreate(false)}
-            onConfirm={() => {
-                console.log('User created!');
-              }}
             >
               <div>
                 <div className="mb-4">
                     <label className="block text-sm fw-500 toothline-text">Name</label>
-                    <input type="text" id="name" name="name" className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
+                    <input type="text" id="name" name="name" value={userForm.name} onChange={handleUserForm} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
                 </div>
                 <div className="mb-4">
                     <label className="block text-sm fw-500 toothline-text">Email</label>
-                    <input type="email" id="email" name="email" className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., janedoe@example.com" />
+                    <input type="email" id="email" name="email" value={userForm.email} onChange={handleUserForm} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., janedoe@example.com" />
                 </div>
                 <div className="mb-4">
                     <label className="block text-sm fw-500 toothline-text">Role</label>
-                    <select id="role" name="role" className="mt-1 block w-full rounded-md text-sm">
-                        <option value="admin">Admin</option>
-                        <option value="dentist">Dentist</option>
-                        <option value="staff">Staff</option>
+                    <select id="role" name="role" value={userForm.role} onChange={handleUserForm} className="mt-1 block w-full rounded-md text-sm">
+                        <option value="ADMIN">Admin</option>
+                        <option value="DENTIST">Dentist</option>
+                        <option value="STAFF">Staff</option>
                     </select>
+                </div>
+
+                <div className="mt-4 flex justify-end space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setOpenCreate(false)}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => createNewUser()}
+                    className="px-4 py-2 toothline-bg-error text-white rounded hover:bg-red-600"
+                  >
+                    Save User
+                  </button>
                 </div>
               </div>
           </Modal>
@@ -141,29 +193,40 @@ const SecurityPage: React.FC = () => {
           <Modal
             isOpen={openEdit}
             title="Edit User"
-            confirmText="Save changes"
-            cancelText="Cancel"
             onClose={() => setOpenEdit(false)}
-            onConfirm={() => {
-                console.log('User updated!');
-              }}
             >
               <div>
-                <div className="mb-4">
-                    <label className="block text-sm fw-500 toothline-text">Name</label>
-                    <input type="text" id="name" name="name" className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
+                <div className="mb-4 flex">
+                    <label className="text-sm fw-500 toothline-text">Name</label>
+                    <p className="ml-5 text-sm fw-600">{user?.name}</p>
                 </div>
-                <div className="mb-4">
-                    <label className="block text-sm fw-500 toothline-text">Email</label>
-                    <input type="email" id="email" name="email" className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., janedoe@example.com" />
+                <div className="mb-4 flex">
+                    <label className="text-sm fw-500 toothline-text">Email</label>
+                    <p className="ml-5 text-sm fw-600">{user?.email}</p>
                 </div>
                 <div className="mb-4">
                     <label className="block text-sm fw-500 toothline-text">Role</label>
-                    <select id="role" name="role" className="mt-1 block w-full rounded-md text-sm">
-                        <option value="admin">Admin</option>
-                        <option value="dentist">Dentist</option>
-                        <option value="staff">Staff</option>
+                    <select id="role" name="role" value={updateUserForm?.role} onChange={handleUpdateUserRole} className="mt-1 block w-full rounded-md text-sm">
+                        <option value="ADMIN">Admin</option>
+                        <option value="DENTIST">Dentist</option>
+                        <option value="STAFF">Staff</option>
                     </select>
+                </div>
+                <div className="mt-4 flex justify-end space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setOpenEdit(false)}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => updateUserData()}
+                    className="px-4 py-2 toothline-bg-error text-white rounded hover:bg-red-600"
+                  >
+                    Update User
+                  </button>
                 </div>
               </div>
           </Modal>
@@ -172,13 +235,24 @@ const SecurityPage: React.FC = () => {
           <Modal
             isOpen={openLock}
             title="Lock User"
-            confirmText="Yes, Lock"
-            cancelText="Cancel"
             onClose={() => setOpenLock(false)}
-            onConfirm={() => {
-                console.log('User locked!');
-              }}
             >Are you sure you want to lock this user?
+            <div className="mt-4 flex justify-end space-x-2">
+              <button
+                type="button"
+                onClick={() => setOpenLock(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => updateUserData()}
+                className="px-4 py-2 toothline-bg-error text-white rounded hover:bg-red-600"
+              >
+                Lock User
+              </button>
+            </div>
           </Modal>
 
       </div>

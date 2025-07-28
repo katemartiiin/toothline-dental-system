@@ -7,7 +7,7 @@ type HeaderProps = {
   title: string;
 };
 const Header: React.FC<HeaderProps> = ({ title }) => {
-  const { logout } = useAuth();
+  const { userName, logout } = useAuth();
   const navigate = useNavigate();
 
   const [open, setOpen] = useState(false);
@@ -50,7 +50,7 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
             className="w-9 h-9 rounded-full border"
           />
           <span className="hidden md:inline text-sm font-medium text-gray-700">
-            Admin
+            {userName}
           </span>
         </button>
 

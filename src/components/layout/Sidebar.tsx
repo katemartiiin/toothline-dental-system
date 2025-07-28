@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
-  const { logout } = useAuth();
+  const { userRole, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -52,9 +52,11 @@ const Sidebar: React.FC = () => {
         <NavLink to="/admin/patients" className={linkClass}>
           <UsersRound size={20} className="mr-2 my-auto" /> Patients
         </NavLink>
-        <NavLink to="/admin/security" className={linkClass}>
-          <Settings size={20} className="mr-2 my-auto" /> Security
-        </NavLink>
+        {userRole === 'ADMIN' && (
+          <NavLink to="/admin/security" className={linkClass}>
+            <Settings size={20} className="mr-2 my-auto" /> Security
+          </NavLink>
+        )}
       </div>
 
       <div className="pt-4 border-t mt-4">
