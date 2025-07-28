@@ -3,6 +3,7 @@ import Modal from '../../components/Modal';
 import ResetPassword from '../../components/security/ResetPassword';
 import AuditLogs from '../../components/security/AuditLogs';
 import { fetchUsersByRole, type User, type UsersFilters} from '../../api/users';
+import { updateUserAsAdmin, type UpdateUserForm } from '../../api/security';
 
 const SecurityPage: React.FC = () => {
   const [openCreate, setOpenCreate] = useState(false);
@@ -14,12 +15,56 @@ const SecurityPage: React.FC = () => {
     role: ""
   });
 
+  const defaultUserForm = {
+    role: '',
+    resetPassword: false,
+    locked: false
+  }
+
+  const [updateUserForm, setUpdateUserForm] = useState<UpdateUserForm>(defaultUserForm);
+  const [user, setUser] = useState<User | any>();
+
+  const handleUpdateUserRole = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement >) => {
+    const { name, value } = e.target;
+    setUpdateUserForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
   const getUsers = async() => {
     try {
       const res = await fetchUsersByRole(userFilters);
       setUsers(res);
     } catch (error) {
       console.log('Failed to fetch users', error)
+    }
+  };
+
+  const handleUserUpdate = (user: User | any, type: string) => {
+    setUser(user);
+    
+    if (type == 'edit') {
+      updateUserForm.role = user.role;
+      updateUserForm.locked = false;
+      setOpenEdit(true);
+    } else {
+      updateUserForm.role = '';
+      updateUserForm.locked = true;
+      setOpenLock(true);
+    }
+  }
+
+  const updateUserData = async () => {
+    try {
+      const res = await updateUserAsAdmin(user.id, updateUserForm);
+      setUpdateUserForm(defaultUserForm);
+      setOpenEdit(false);
+      setOpenLock(false);
+      getUsers();
+    }
+    catch (error) {
+      console.error('Failed to update user', error);
     }
   };
 
@@ -59,16 +104,21 @@ const SecurityPage: React.FC = () => {
         </div>
 
         {/* Table Rows */}
-        <div className="w-full grid grid-cols-4 gap-2 px-3 py-2 toothline-bg-light shadow-sm text-sm my-1">
-          <p>Dr. Melissa Chen</p>
-          <p>melissa.c@toothline.com</p>
-          <p className="toothline-success">Dentist</p>
-          <div className="space-x-3">
-            <button type="button" onClick={() => setOpenEdit(true)} className="toothline-text-accent fw-500">Edit Role</button>
-            <button type="button" onClick={() => setOpenLock(true)} className="toothline-error fw-500">Lock</button>
+        {users?.length ? (
+          users.map((user) => (
+          <div key={user.id} className="w-full grid grid-cols-4 gap-2 px-3 py-2 toothline-bg-light shadow-sm text-sm my-1">
+            <p>{user.name}</p>
+            <p>{user.email}</p>
+            <p className="toothline-text-primary">{user.role}</p>
+            <div className="space-x-3">
+              <button type="button" onClick={() => handleUserUpdate(user, 'edit')} className="toothline-text-accent fw-500">Edit Role</button>
+              <button type="button" onClick={() => handleUserUpdate(user, 'lock')} className="toothline-error fw-500">Lock</button>
+            </div>
           </div>
-        </div>
-
+          ))
+        ) : (
+          <p className="w-full bg-gray-50 my-1 p-1 text-gray-500 italic text-center">No users added yet.</p>
+        )}
 
         {/* Create User */}
           <Modal
@@ -103,21 +153,37 @@ const SecurityPage: React.FC = () => {
             onClose={() => setOpenEdit(false)}
             >
               <div>
-                <div className="mb-4">
-                    <label className="block text-sm fw-500 toothline-text">Name</label>
-                    <input type="text" id="name" name="name" className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
+                <div className="mb-4 flex">
+                    <label className="text-sm fw-500 toothline-text">Name</label>
+                    <p className="ml-5 text-sm fw-600">{user?.name}</p>
                 </div>
-                <div className="mb-4">
-                    <label className="block text-sm fw-500 toothline-text">Email</label>
-                    <input type="email" id="email" name="email" className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., janedoe@example.com" />
+                <div className="mb-4 flex">
+                    <label className="text-sm fw-500 toothline-text">Email</label>
+                    <p className="ml-5 text-sm fw-600">{user?.email}</p>
                 </div>
                 <div className="mb-4">
                     <label className="block text-sm fw-500 toothline-text">Role</label>
-                    <select id="role" name="role" className="mt-1 block w-full rounded-md text-sm">
-                        <option value="admin">Admin</option>
-                        <option value="dentist">Dentist</option>
-                        <option value="staff">Staff</option>
+                    <select id="role" name="role" value={updateUserForm?.role} onChange={handleUpdateUserRole} className="mt-1 block w-full rounded-md text-sm">
+                        <option value="ADMIN">Admin</option>
+                        <option value="DENTIST">Dentist</option>
+                        <option value="STAFF">Staff</option>
                     </select>
+                </div>
+                <div className="mt-4 flex justify-end space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setOpenEdit(false)}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => updateUserData()}
+                    className="px-4 py-2 toothline-bg-error text-white rounded hover:bg-red-600"
+                  >
+                    Update User
+                  </button>
                 </div>
               </div>
           </Modal>
@@ -128,6 +194,22 @@ const SecurityPage: React.FC = () => {
             title="Lock User"
             onClose={() => setOpenLock(false)}
             >Are you sure you want to lock this user?
+            <div className="mt-4 flex justify-end space-x-2">
+              <button
+                type="button"
+                onClick={() => setOpenLock(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => updateUserData()}
+                className="px-4 py-2 toothline-bg-error text-white rounded hover:bg-red-600"
+              >
+                Lock User
+              </button>
+            </div>
           </Modal>
 
       </div>

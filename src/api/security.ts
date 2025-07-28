@@ -2,7 +2,8 @@ import axios from '../lib/axios';
 
 export interface UpdateUserForm {
   role: string;
-  resetPassword: boolean
+  resetPassword: boolean;
+  locked: boolean;
 }
 
 export const updateUserAsAdmin = async (userId: number, updateUserForm: UpdateUserForm) => {

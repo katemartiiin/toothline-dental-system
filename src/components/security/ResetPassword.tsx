@@ -8,7 +8,8 @@ interface ResetPasswordProps {
 const ResetPassword = ({ users }: ResetPasswordProps) => {
     const [updateUserForm, setUpdateUserForm] = useState<UpdateUserForm>({
         role: '',
-        resetPassword: false
+        resetPassword: false,
+        locked: false
     });
     const [openReset, setOpenReset] = useState(false);
 
@@ -65,20 +66,20 @@ const ResetPassword = ({ users }: ResetPasswordProps) => {
             onClose={() => setOpenReset(false)}
             >Are you sure you want to reset password for this user?
             <div className="mt-4 flex justify-end space-x-2">
-            <button
-              type="button"
-              onClick={() => setOpenReset(false)}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={() => resetUserPassword()}
-              className="px-4 py-2 toothline-bg-error text-white rounded hover:bg-red-600"
-            >
-              Reset Password
-            </button>
+              <button
+                type="button"
+                onClick={() => setOpenReset(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => resetUserPassword()}
+                className="px-4 py-2 toothline-bg-error text-white rounded hover:bg-red-600"
+              >
+                Reset Password
+              </button>
           </div>
         </Modal>
     </div>
