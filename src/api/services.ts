@@ -1,6 +1,21 @@
 import axios from '../lib/axios';
 
-export const fetchServices = async () => {
-  const res = await axios.get('/admin/services');
+export interface ServiceFilters {
+  name?: string;
+};
+export interface ServiceForm {
+  name: string;
+  description: string;
+  durationMinutes: number;
+  price: number;
+}
+
+export const fetchServices = async (filters: ServiceFilters) => {
+  const res = await axios.post('/admin/services/fetch', filters);
   return res.data.data;
 };
+
+export const createService = async (serviceForm: ServiceForm) => {
+  const res = await axios.post('/admin/services', serviceForm)
+  return res.data;
+}

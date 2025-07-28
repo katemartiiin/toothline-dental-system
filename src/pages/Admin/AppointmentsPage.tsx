@@ -2,7 +2,7 @@ import { useRef, useState, useEffect } from 'react';
 import Modal from '../../components/Modal';
 import { fetchAppointments, createAppointment, updateAppointment, updateStatus, toggleArchive, 
   type AppointmentFilters, type FormData, type UpdateFormData } from '../../api/appointments';
-import { fetchServices } from '../../api/services';
+import { fetchServices, type ServiceFilters } from '../../api/services';
 import {fetchUsersByRole, type UsersFilters } from '../../api/users';
 interface Appointment {
   id: number;
@@ -38,6 +38,10 @@ const AppointmentsPage: React.FC = () => {
 
   const [userFilters, setUserFilters] = useState<UsersFilters>({
     role: ""
+  });
+
+  const [serviceFilters, setServiceFilters] = useState<ServiceFilters>({
+    name: ""
   });
 
   const [formData, setFormData] = useState<FormData>({
@@ -164,7 +168,7 @@ const AppointmentsPage: React.FC = () => {
 
   const getServices = async () => {
     try {
-      const dataServices = await fetchServices();
+      const dataServices = await fetchServices(serviceFilters);
       setServices(dataServices);
     } catch (error) {
       console.error('Failed to fetch services', error);
