@@ -1,9 +1,121 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Modal from '../../components/Modal';
+import { fetchServices, createService, updateService, deleteService, type ServiceForm, type ServiceFilters } from '../../api/services';
+interface Service {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  durationMinutes: number;
+}
 const ServicesPage: React.FC = () => {
+  const [services, setServices] = useState<Service[]>([]);
+
+  const defaultServiceForm = {
+    name: '',
+    description: '',
+    durationMinutes: 0,
+    price: 0,
+  }
+
+  const [serviceForm, setServiceForm] = useState<ServiceForm>(defaultServiceForm);
+  const [serviceUpdateForm, setServiceUpdateForm] = useState<ServiceForm>(defaultServiceForm);
+
+  const [serviceFilters, setServiceFilters] = useState<ServiceFilters>({
+    name: ""
+  });
+
+  const [selectedService, setSelectedService] = useState<Service>({
+    id: 0,
+    name: '',
+    description: '',
+    price: 0,
+    durationMinutes: 0
+  });
+
   const [openCreate, setOpenCreate] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
+
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setServiceFilters((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement >) => {
+    const { name, value } = e.target;
+    setServiceForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleFormUpdate = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement >) => {
+    const { name, value } = e.target;
+    setSelectedService((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSelectedService = (service: Service, type: string) => {
+    setSelectedService(service);
+    
+    type == 'update' ? setOpenEdit(true) : setOpenDelete(true);
+  }
+
+  const getServices = async () => {
+    try {
+      const dataServices = await fetchServices(serviceFilters);
+      setServices(dataServices);
+    } catch (error) {
+      console.error('Failed to fetch services', error);
+    }
+  };
+
+  const createNewService = async () => {
+    try {
+      const createData = await createService(serviceForm);
+      setServiceForm(defaultServiceForm);
+      getServices();
+    } catch (error) {
+      console.log('Failed to create service', error);
+    }
+  };
+
+  const editService = async () => {
+    // setServiceForm({
+    //   name: selectedService.name,
+    //   description: selectedService.description,
+    //   durationMinutes: selectedService.durationMinutes,
+    //   price: selectedService.price
+    // });
+
+    try {
+      const updateData = await updateService(selectedService.id, selectedService);
+      getServices();
+      setOpenEdit(false);
+    } catch (error) {
+      console.log('Failed to update service', error);
+    }
+  };
+
+  const deleteServ = async () => {
+    try {
+      const deleteData = await deleteService(selectedService.id);
+      getServices();
+      setOpenDelete(false);
+    } catch (error) {
+      console.log('Failed to delete service', error);
+    }
+  };
+
+  useEffect(() => {
+    getServices();
+  }, [serviceFilters]);
   return (
     <div className="w-full flex flex-wrap px-16 py-2">
       <div className="w-full flex flex-wrap">
@@ -16,48 +128,51 @@ const ServicesPage: React.FC = () => {
           </button>
         </div>
 
-        <div className="w-1/2 grid grid-cols-3 gap-3 text-sm">
-          <select className="mt-1 block w-full rounded-md text-sm">
-              <option value="pending">Pending</option>
-              <option value="confirmed">Confirmed</option>
-          </select>
-          <input type="text" className="col-span-2 rounded-md text-sm" placeholder="e.g., Tooth Filling" />
+        <div className="w-1/2 flex items-end justify-end text-sm">
+          <input type="text" name="name" value={serviceFilters.name} onChange={handleFilterChange} className="w-2/3 rounded-md text-sm" placeholder="e.g., Tooth Filling" />
         </div>
 
         {/* Create Service */}
         <Modal
           isOpen={openCreate}
           title="Create New Service"
-          confirmText="Create Service"
-          cancelText="Cancel"
           onClose={() => setOpenCreate(false)}
-          onConfirm={() => {
-              console.log('Service created!');
-            }}
           >
             <div>
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Service Name</label>
-                  <input type="text" id="patientName" name="patientName" className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
+                  <input type="text" id="serviceName" name="name" value={serviceForm.name} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
               </div>
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Description</label>
-                  <textarea id="serviceDescription" name="serviceDescription" className="mt-1 block w-full rounded-md text-sm" placeholder="Brief description of the service"></textarea>
+                  <textarea id="description" name="description" value={serviceForm.description} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" placeholder="Brief description of the service"></textarea>
               </div>
-              <div className="mb-4">
+              <div className="mb-4 grid grid-cols-2 gap-2">
+                <div>
                   <label className="block text-sm fw-500 toothline-text">Price ($)</label>
-                  <input type="number" id="servicePrice" name="servicePrice" className="mt-1 block w-full rounded-md text-sm" step="0.01" min="0" placeholder="e.g., 250.00" />
+                  <input type="number" id="price" name="price" value={serviceForm.price} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" step="0.01" min="0" placeholder="e.g., 250.00" />
+                </div>
+                <div>
+                    <label className="block text-sm fw-500 toothline-text">Duration</label>
+                    <input type="number" id="duration" name="durationMinutes" value={serviceForm.durationMinutes} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" min="1" placeholder="e.g., 60" />
+                </div>
               </div>
-              <div className="mb-4">
-                  <label className="block text-sm fw-500 toothline-text">Duration</label>
-                  <input type="number" id="serviceDuration" name="serviceDuration" className="mt-1 block w-full rounded-md text-sm" min="1" placeholder="e.g., 60" />
-              </div>
-              <div className="mb-4">
-                  <label className="block text-sm fw-500 toothline-text">Status</label>
-                  <select id="status" name="status" className="mt-1 block w-full rounded-md text-sm">
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                  </select>
+
+              <div className="flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setOpenCreate(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => createNewService()}
+                  className="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700"
+                >
+                  Save Service
+                </button>
               </div>
             </div>
         </Modal>
@@ -66,36 +181,43 @@ const ServicesPage: React.FC = () => {
         <Modal
           isOpen={openEdit}
           title="Edit Service"
-          confirmText="Save changes"
-          cancelText="Cancel"
           onClose={() => setOpenEdit(false)}
-          onConfirm={() => {
-              console.log('Service updated!');
-            }}
           >
             <div>
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Service Name</label>
-                  <input type="text" id="patientName" name="patientName" className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
+                  <input type="text" id="serviceName" name="name" value={selectedService.name} onChange={handleFormUpdate} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
               </div>
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Description</label>
-                  <textarea id="serviceDescription" name="serviceDescription" className="mt-1 block w-full rounded-md text-sm" placeholder="Brief description of the service"></textarea>
+                  <textarea id="serviceDescription" name="description" value={selectedService.description} onChange={handleFormUpdate} className="mt-1 block w-full rounded-md text-sm" placeholder="Brief description of the service"></textarea>
               </div>
-              <div className="mb-4">
+              <div className="mb-4 grid grid-cols-2 gap-2">
+                <div>
                   <label className="block text-sm fw-500 toothline-text">Price ($)</label>
-                  <input type="number" id="servicePrice" name="servicePrice" className="mt-1 block w-full rounded-md text-sm" step="0.01" min="0" placeholder="e.g., 250.00" />
+                  <input type="number" id="servicePrice" name="price" value={selectedService.price} onChange={handleFormUpdate} className="mt-1 block w-full rounded-md text-sm" step="0.01" min="0" placeholder="e.g., 250.00" />
+                </div>
+                <div>
+                    <label className="block text-sm fw-500 toothline-text">Duration</label>
+                    <input type="number" id="serviceDuration" name="durationMinutes" value={selectedService.durationMinutes} onChange={handleFormUpdate} className="mt-1 block w-full rounded-md text-sm" min="1" placeholder="e.g., 60" />
+                </div>
               </div>
-              <div className="mb-4">
-                  <label className="block text-sm fw-500 toothline-text">Duration</label>
-                  <input type="number" id="serviceDuration" name="serviceDuration" className="mt-1 block w-full rounded-md text-sm" min="1" placeholder="e.g., 60" />
-              </div>
-              <div className="mb-4">
-                  <label className="block text-sm fw-500 toothline-text">Status</label>
-                  <select id="status" name="status" className="mt-1 block w-full rounded-md text-sm">
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                  </select>
+
+              <div className="flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setOpenEdit(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={()=> editService()}
+                  className="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700"
+                >
+                  Update Service
+                </button>
               </div>
             </div>
         </Modal>
@@ -104,13 +226,24 @@ const ServicesPage: React.FC = () => {
         <Modal
           isOpen={openDelete}
           title="Delete Service"
-          confirmText="Yes, Delete"
-          cancelText="Cancel"
           onClose={() => setOpenDelete(false)}
-          onConfirm={() => {
-              console.log('Service deleted!');
-            }}
           >Are you sure you want to delete this service? This action cannot be undone.
+          <div className="mt-4 flex justify-end space-x-2">
+            <button
+              type="button"
+              onClick={() => setOpenDelete(false)}
+              className="px-4 py-2 text-gray-600 hover:text-gray-800"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => deleteServ()}
+              className="px-4 py-2 toothline-bg-error text-white rounded hover:bg-red-600"
+            >
+              Delete Service
+            </button>
+          </div>
         </Modal>
 
       </div>
@@ -119,63 +252,31 @@ const ServicesPage: React.FC = () => {
         <h2 className="fw-600 text-xl mb-5">Clinic Services</h2>
 
         {/* Table Headers */}
-        <div className="w-full grid grid-cols-8 gap-2 px-3 py-2 toothline-bg-light border-b border-gray-200 text-xs toothline-text">
+        <div className="w-full grid grid-cols-7 gap-2 px-3 py-2 toothline-bg-light border-b border-gray-200 text-xs toothline-text">
           <p className="col-span-2">SERVICE NAME</p>
           <p className="col-span-2">DESCRIPTION</p>
           <p>PRICE</p>
           <p>DURATION</p>
-          <p>STATUS</p>
           <p>ACTIONS</p>
         </div>
 
         {/* Table Rows */}
-        <div className="w-full grid grid-cols-8 gap-2 px-3 py-2 toothline-bg-light shadow-sm text-sm my-1">
-          <p className="col-span-2">Dental Checkup</p>
-          <p className="col-span-2 truncate">Comprehensive oral examination</p>
-          <p>$75.00</p>
-          <p>30</p>
-          <p className="fw-500 toothline-success">Active</p>
-          <div className="space-x-3">
-            <button type="button" onClick={() => setOpenEdit(true)} className="toothline-text-accent fw-500">Edit</button>
-            <button type="button" onClick={() => setOpenDelete(true)} className="toothline-error fw-500">Delete</button>
+        {services?.length ? (
+          services.map((service) => (
+          <div key={service.id} className="w-full grid grid-cols-7 gap-2 px-3 py-2 toothline-bg-light shadow-sm text-sm my-1">
+            <p className="col-span-2">{service.name}</p>
+            <p className="col-span-2 truncate">{service.description}</p>
+            <p>₱ {service.price}</p>
+            <p>{service.durationMinutes}</p>
+            <div className="space-x-3">
+              <button type="button" onClick={() => handleSelectedService(service, 'update')} className="toothline-text-accent fw-500">Edit</button>
+              <button type="button" onClick={() => handleSelectedService(service, 'delete')} className="toothline-error fw-500">Delete</button>
+            </div>
           </div>
-        </div>
-
-        <div className="w-full grid grid-cols-8 gap-2 px-3 py-2 toothline-bg-light shadow-sm text-sm my-1">
-          <p className="col-span-2">Teeth Cleaning</p>
-          <p className="col-span-2 truncate">Professional scaling and polishing</p>
-          <p>$120.00</p>
-          <p>45</p>
-          <p className="fw-500 toothline-success">Active</p>
-          <div className="space-x-3">
-            <button type="button" onClick={() => setOpenEdit(true)} className="toothline-text-accent fw-500">Edit</button>
-            <button type="button" onClick={() => setOpenDelete(true)} className="toothline-error fw-500">Delete</button>
-          </div>
-        </div>
-
-        <div className="w-full grid grid-cols-8 gap-2 px-3 py-2 toothline-bg-light shadow-sm text-sm my-1">
-          <p className="col-span-2">Tooth Filling</p>
-          <p className="col-span-2 truncate">Restoration of teeth damanged by</p>
-          <p>$150.00</p>
-          <p>60</p>
-          <p className="fw-500 toothline-success">Active</p>
-          <div className="space-x-3">
-            <button type="button" onClick={() => setOpenEdit(true)} className="toothline-text-accent fw-500">Edit</button>
-            <button type="button" onClick={() => setOpenDelete(true)} className="toothline-error fw-500">Delete</button>
-          </div>
-        </div>
-
-        <div className="w-full grid grid-cols-8 gap-2 px-3 py-2 toothline-bg-light shadow-sm text-sm my-1">
-          <p className="col-span-2">Wisdom Tooth Extraction</p>
-          <p className="col-span-2 truncate">Surgical removal of wisdom teeth.</p>
-          <p>$150.00</p>
-          <p>90</p>
-          <p className="fw-500 toothline-error">Inctive</p>
-          <div className="space-x-3">
-            <button type="button" onClick={() => setOpenEdit(true)} className="toothline-text-accent fw-500">Edit</button>
-            <button type="button" onClick={() => setOpenDelete(true)} className="toothline-error fw-500">Delete</button>
-          </div>
-        </div>
+          ))
+        ) : (
+          <p className="w-full bg-gray-50 my-1 p-1 text-gray-500 italic text-center">No services added yet.</p>
+        )}
 
       </div>
     </div>
