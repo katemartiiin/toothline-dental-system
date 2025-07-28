@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import Modal from '../../components/Modal';
-import { fetchServices, createService, updateService, deleteService, type ServiceForm, type ServiceFilters } from '../../api/services';
+import { fetchServices, createService, updateService, deleteService, 
+  type ServiceForm, type ServiceFilters } from '../../api/services';
 interface Service {
   id: number;
   name: string;
@@ -19,7 +20,6 @@ const ServicesPage: React.FC = () => {
   }
 
   const [serviceForm, setServiceForm] = useState<ServiceForm>(defaultServiceForm);
-  const [serviceUpdateForm, setServiceUpdateForm] = useState<ServiceForm>(defaultServiceForm);
 
   const [serviceFilters, setServiceFilters] = useState<ServiceFilters>({
     name: ""
@@ -87,13 +87,6 @@ const ServicesPage: React.FC = () => {
   };
 
   const editService = async () => {
-    // setServiceForm({
-    //   name: selectedService.name,
-    //   description: selectedService.description,
-    //   durationMinutes: selectedService.durationMinutes,
-    //   price: selectedService.price
-    // });
-
     try {
       const updateData = await updateService(selectedService.id, selectedService);
       getServices();
@@ -128,8 +121,8 @@ const ServicesPage: React.FC = () => {
           </button>
         </div>
 
-        <div className="w-1/2 flex items-end justify-end text-sm">
-          <input type="text" name="name" value={serviceFilters.name} onChange={handleFilterChange} className="w-2/3 rounded-md text-sm" placeholder="e.g., Tooth Filling" />
+        <div className="w-1/2 text-sm flex justify-end">
+          <input type="text" name="name" value={serviceFilters.name} onChange={handleFilterChange} className="rounded-md text-sm" placeholder="e.g., Tooth Cleaning" />
         </div>
 
         {/* Create Service */}
