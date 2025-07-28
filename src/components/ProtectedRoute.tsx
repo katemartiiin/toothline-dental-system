@@ -2,7 +2,21 @@ import type { JSX } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 
-export default function ProtectedRoute({ children }: { children: JSX.Element }) {
-  const { token } = useAuth();
-  return token ? children : <Navigate to="/admin/login" />;
+interface ProtectedRouteProps {
+  children: JSX.Element;
+  requiredRole?: string;
+}
+
+export default function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
+  const { token, userRole } = useAuth();
+
+  if (!token) {
+    return <Navigate to="/admin/login" />;
+  } else {
+    if (requiredRole && userRole != requiredRole) {
+      return <Navigate to="/admin/dashboard" />;
+    }
+  }
+
+  return children;
 }

@@ -15,14 +15,6 @@ const UserProfilePage: React.FC = () => {
                 <label className="block text-sm fw-500 toothline-text">Email</label>
                 <input type="email" id="email" name="email" className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., janedoe@example.com" />
             </div>
-            <div className="mb-4">
-                <label className="block text-sm fw-500 toothline-text">Role</label>
-                <select id="role" name="role" className="mt-1 block w-full rounded-md text-sm">
-                    <option value="admin">Admin</option>
-                    <option value="dentist">Dentist</option>
-                    <option value="staff">Staff</option>
-                </select>
-            </div>
 
             <div className="text-right">
                 <button type="button"className="px-4 py-2 text-sm toothline-accent text-white rounded hover:toothline-primary">
