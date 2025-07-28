@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import Modal from '../../components/Modal';
-import { fetchServices, createService, deleteService, type ServiceForm, type ServiceFilters } from '../../api/services';
+import { fetchServices, createService, updateService, deleteService, type ServiceForm, type ServiceFilters } from '../../api/services';
 interface Service {
   id: number;
   name: string;
@@ -19,12 +19,13 @@ const ServicesPage: React.FC = () => {
   }
 
   const [serviceForm, setServiceForm] = useState<ServiceForm>(defaultServiceForm);
+  const [serviceUpdateForm, setServiceUpdateForm] = useState<ServiceForm>(defaultServiceForm);
 
   const [serviceFilters, setServiceFilters] = useState<ServiceFilters>({
     name: ""
   });
 
-  const [selectedService, setSelectedService] = useState<Service | any>({
+  const [selectedService, setSelectedService] = useState<Service>({
     id: 0,
     name: '',
     description: '',
@@ -52,9 +53,18 @@ const ServicesPage: React.FC = () => {
     }));
   };
 
-  const handleDeleteService = (service: Service) => {
+  const handleFormUpdate = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement >) => {
+    const { name, value } = e.target;
+    setSelectedService((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSelectedService = (service: Service, type: string) => {
     setSelectedService(service);
-    setOpenDelete(true);
+    
+    type == 'update' ? setOpenEdit(true) : setOpenDelete(true);
   }
 
   const getServices = async () => {
@@ -73,6 +83,23 @@ const ServicesPage: React.FC = () => {
       getServices();
     } catch (error) {
       console.log('Failed to create service', error);
+    }
+  };
+
+  const editService = async () => {
+    // setServiceForm({
+    //   name: selectedService.name,
+    //   description: selectedService.description,
+    //   durationMinutes: selectedService.durationMinutes,
+    //   price: selectedService.price
+    // });
+
+    try {
+      const updateData = await updateService(selectedService.id, selectedService);
+      getServices();
+      setOpenEdit(false);
+    } catch (error) {
+      console.log('Failed to update service', error);
     }
   };
 
@@ -159,26 +186,21 @@ const ServicesPage: React.FC = () => {
             <div>
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Service Name</label>
-                  <input type="text" id="patientName" name="patientName" className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
+                  <input type="text" id="serviceName" name="name" value={selectedService.name} onChange={handleFormUpdate} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
               </div>
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Description</label>
-                  <textarea id="serviceDescription" name="serviceDescription" className="mt-1 block w-full rounded-md text-sm" placeholder="Brief description of the service"></textarea>
+                  <textarea id="serviceDescription" name="description" value={selectedService.description} onChange={handleFormUpdate} className="mt-1 block w-full rounded-md text-sm" placeholder="Brief description of the service"></textarea>
               </div>
-              <div className="mb-4">
+              <div className="mb-4 grid grid-cols-2 gap-2">
+                <div>
                   <label className="block text-sm fw-500 toothline-text">Price ($)</label>
-                  <input type="number" id="servicePrice" name="servicePrice" className="mt-1 block w-full rounded-md text-sm" step="0.01" min="0" placeholder="e.g., 250.00" />
-              </div>
-              <div className="mb-4">
-                  <label className="block text-sm fw-500 toothline-text">Duration</label>
-                  <input type="number" id="serviceDuration" name="serviceDuration" className="mt-1 block w-full rounded-md text-sm" min="1" placeholder="e.g., 60" />
-              </div>
-              <div className="mb-4">
-                  <label className="block text-sm fw-500 toothline-text">Status</label>
-                  <select id="status" name="status" className="mt-1 block w-full rounded-md text-sm">
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                  </select>
+                  <input type="number" id="servicePrice" name="price" value={selectedService.price} onChange={handleFormUpdate} className="mt-1 block w-full rounded-md text-sm" step="0.01" min="0" placeholder="e.g., 250.00" />
+                </div>
+                <div>
+                    <label className="block text-sm fw-500 toothline-text">Duration</label>
+                    <input type="number" id="serviceDuration" name="durationMinutes" value={selectedService.durationMinutes} onChange={handleFormUpdate} className="mt-1 block w-full rounded-md text-sm" min="1" placeholder="e.g., 60" />
+                </div>
               </div>
 
               <div className="flex justify-end space-x-2">
@@ -191,6 +213,7 @@ const ServicesPage: React.FC = () => {
                 </button>
                 <button
                   type="button"
+                  onClick={()=> editService()}
                   className="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700"
                 >
                   Update Service
@@ -246,8 +269,8 @@ const ServicesPage: React.FC = () => {
             <p>₱ {service.price}</p>
             <p>{service.durationMinutes}</p>
             <div className="space-x-3">
-              <button type="button" onClick={() => setOpenEdit(true)} className="toothline-text-accent fw-500">Edit</button>
-              <button type="button" onClick={() => handleDeleteService(service)} className="toothline-error fw-500">Delete</button>
+              <button type="button" onClick={() => handleSelectedService(service, 'update')} className="toothline-text-accent fw-500">Edit</button>
+              <button type="button" onClick={() => handleSelectedService(service, 'delete')} className="toothline-error fw-500">Delete</button>
             </div>
           </div>
           ))

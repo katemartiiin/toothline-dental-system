@@ -20,6 +20,11 @@ export const createService = async (serviceForm: ServiceForm) => {
   return res.data;
 }
 
+export const updateService = async (serviceId: number, serviceForm: ServiceForm) => {
+  const res = await axios.put('/admin/services/' + serviceId + '/update', serviceForm);
+  return res.data;
+}
+
 export const deleteService = async (serviceId: number) => {
   const res = await axios.delete('/admin/services/' + serviceId + '/delete');
   return res.data;
