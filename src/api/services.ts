@@ -19,3 +19,8 @@ export const createService = async (serviceForm: ServiceForm) => {
   const res = await axios.post('/admin/services', serviceForm)
   return res.data;
 }
+
+export const deleteService = async (serviceId: number) => {
+  const res = await axios.delete('/admin/services/' + serviceId + '/delete');
+  return res.data;
+}

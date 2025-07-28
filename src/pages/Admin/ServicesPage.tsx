@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import Modal from '../../components/Modal';
-import { fetchServices, createService, type ServiceForm, type ServiceFilters } from '../../api/services';
+import { fetchServices, createService, deleteService, type ServiceForm, type ServiceFilters } from '../../api/services';
 interface Service {
   id: number;
   name: string;
@@ -24,6 +24,14 @@ const ServicesPage: React.FC = () => {
     name: ""
   });
 
+  const [selectedService, setSelectedService] = useState<Service | any>({
+    id: 0,
+    name: '',
+    description: '',
+    price: 0,
+    durationMinutes: 0
+  });
+
   const [openCreate, setOpenCreate] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
@@ -44,6 +52,11 @@ const ServicesPage: React.FC = () => {
     }));
   };
 
+  const handleDeleteService = (service: Service) => {
+    setSelectedService(service);
+    setOpenDelete(true);
+  }
+
   const getServices = async () => {
     try {
       const dataServices = await fetchServices(serviceFilters);
@@ -61,7 +74,17 @@ const ServicesPage: React.FC = () => {
     } catch (error) {
       console.log('Failed to create service', error);
     }
-  }
+  };
+
+  const deleteServ = async () => {
+    try {
+      const deleteData = await deleteService(selectedService.id);
+      getServices();
+      setOpenDelete(false);
+    } catch (error) {
+      console.log('Failed to delete service', error);
+    }
+  };
 
   useEffect(() => {
     getServices();
@@ -192,6 +215,7 @@ const ServicesPage: React.FC = () => {
             </button>
             <button
               type="button"
+              onClick={() => deleteServ()}
               className="px-4 py-2 toothline-bg-error text-white rounded hover:bg-red-600"
             >
               Delete Service
@@ -223,7 +247,7 @@ const ServicesPage: React.FC = () => {
             <p>{service.durationMinutes}</p>
             <div className="space-x-3">
               <button type="button" onClick={() => setOpenEdit(true)} className="toothline-text-accent fw-500">Edit</button>
-              <button type="button" onClick={() => setOpenDelete(true)} className="toothline-error fw-500">Delete</button>
+              <button type="button" onClick={() => handleDeleteService(service)} className="toothline-error fw-500">Delete</button>
             </div>
           </div>
           ))
