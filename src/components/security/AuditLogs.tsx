@@ -1,14 +1,35 @@
+import { useEffect, useState } from 'react';
+import { fetchLogs, type AuditLogData } from '../../api/security';
 const AuditLogs: React.FC = () => {
+  const [logs, setLogs] = useState<AuditLogData[]>([]);
+  
+  const getLogs = async () => {
+    try {
+      const res = await fetchLogs();
+      setLogs(res);
+    } catch (error) {
+      console.error('Failed to fetch logs', error);
+    }
+  };
+
+  const topFiveLogs = logs.slice(0, 5);
+
+  useEffect(() => {
+    getLogs()
+  }, []);
   return (
     <div className="w-full flex flex-wrap px-10 py-7 bg-white rounded-lg shadow-md">
         <div>
             <h4 className="fw-500">Audit Log (Recent Activities)</h4>
             
             <div className="w-full text-sm space-y-3 my-5">
-                <p>[2025-06-28 14:30] Admin User changed password.</p>
-                <p>[2025-06-28 14:30] Dr. Melissa Chen updated schedule #1.</p>
-                <p>[2025-06-28 14:30] New service "Teeth Whitening" added.</p>
-                <p>[2025-06-28 14:30] Patient PT-1001 record updated.</p>
+              {logs?.length ? (
+                logs.slice(0, 5).map((log, index) => (
+                <p key={index} className="text-xs">[{log.timestamp}] {log.details} - {log.performedBy}</p>
+                ))
+              ) : (
+                <p>No logs yet.</p>
+              )}
             </div>
         </div>
         <div className="w-full flex items-end justify-end">
