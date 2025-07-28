@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import Modal from '../../components/Modal';
 import ResetPassword from '../../components/security/ResetPassword';
 import AuditLogs from '../../components/security/AuditLogs';
-import { fetchUsersByRole, type User, type UsersFilters} from '../../api/users';
+import { fetchUsersByRole, createUser, type UserForm, type User, type UsersFilters} from '../../api/users';
 import { updateUserAsAdmin, type UpdateUserForm } from '../../api/security';
 
 const SecurityPage: React.FC = () => {
@@ -16,13 +16,29 @@ const SecurityPage: React.FC = () => {
   });
 
   const defaultUserForm = {
+    name: '',
+    email: '',
+    role: ''
+  }
+
+  const defaultUserUpdateForm = {
     role: '',
     resetPassword: false,
     locked: false
   }
 
-  const [updateUserForm, setUpdateUserForm] = useState<UpdateUserForm>(defaultUserForm);
+  const [userForm, setUserForm] = useState<UserForm>(defaultUserForm);
+
+  const [updateUserForm, setUpdateUserForm] = useState<UpdateUserForm>(defaultUserUpdateForm);
   const [user, setUser] = useState<User | any>();
+
+  const handleUserForm = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement >) => {
+    const { name, value } = e.target;
+    setUserForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
   const handleUpdateUserRole = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement >) => {
     const { name, value } = e.target;
@@ -43,7 +59,7 @@ const SecurityPage: React.FC = () => {
 
   const handleUserUpdate = (user: User | any, type: string) => {
     setUser(user);
-    
+
     if (type == 'edit') {
       updateUserForm.role = user.role;
       updateUserForm.locked = false;
@@ -53,12 +69,22 @@ const SecurityPage: React.FC = () => {
       updateUserForm.locked = true;
       setOpenLock(true);
     }
-  }
+  };
+
+  const createNewUser = async () => {
+    try {
+      const res = await createUser(userForm);
+      setUserForm(defaultUserForm);
+      getUsers();
+    } catch (error) {
+      console.error('Failed to create user', error);
+    }
+  };
 
   const updateUserData = async () => {
     try {
       const res = await updateUserAsAdmin(user.id, updateUserForm);
-      setUpdateUserForm(defaultUserForm);
+      setUpdateUserForm(defaultUserUpdateForm);
       setOpenEdit(false);
       setOpenLock(false);
       getUsers();
@@ -129,19 +155,36 @@ const SecurityPage: React.FC = () => {
               <div>
                 <div className="mb-4">
                     <label className="block text-sm fw-500 toothline-text">Name</label>
-                    <input type="text" id="name" name="name" className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
+                    <input type="text" id="name" name="name" value={userForm.name} onChange={handleUserForm} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
                 </div>
                 <div className="mb-4">
                     <label className="block text-sm fw-500 toothline-text">Email</label>
-                    <input type="email" id="email" name="email" className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., janedoe@example.com" />
+                    <input type="email" id="email" name="email" value={userForm.email} onChange={handleUserForm} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., janedoe@example.com" />
                 </div>
                 <div className="mb-4">
                     <label className="block text-sm fw-500 toothline-text">Role</label>
-                    <select id="role" name="role" className="mt-1 block w-full rounded-md text-sm">
-                        <option value="admin">Admin</option>
-                        <option value="dentist">Dentist</option>
-                        <option value="staff">Staff</option>
+                    <select id="role" name="role" value={userForm.role} onChange={handleUserForm} className="mt-1 block w-full rounded-md text-sm">
+                        <option value="ADMIN">Admin</option>
+                        <option value="DENTIST">Dentist</option>
+                        <option value="STAFF">Staff</option>
                     </select>
+                </div>
+
+                <div className="mt-4 flex justify-end space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setOpenCreate(false)}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => createNewUser()}
+                    className="px-4 py-2 toothline-bg-error text-white rounded hover:bg-red-600"
+                  >
+                    Save User
+                  </button>
                 </div>
               </div>
           </Modal>
