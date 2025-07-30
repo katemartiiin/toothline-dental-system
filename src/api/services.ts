@@ -1,4 +1,5 @@
 import axios from '../lib/axios';
+import { toastError, toastSuccess } from '../utils/toastMessage';
 
 export interface ServiceFilters {
   name?: string;
@@ -16,16 +17,39 @@ export const fetchServices = async (filters: ServiceFilters) => {
 };
 
 export const createService = async (serviceForm: ServiceForm) => {
-  const res = await axios.post('/admin/services', serviceForm)
-  return res.data;
+  try {
+    const res = await axios.post('/admin/services', serviceForm)
+    toastSuccess(res.data.message);
+    return res.data;
+  } catch (error: any) {
+    toastError(error.response.data.message);
+
+    if (error.response.data.status == 400) {
+      return error.response.data;
+    }
+  }
 }
 
 export const updateService = async (serviceId: number, serviceForm: ServiceForm) => {
-  const res = await axios.put('/admin/services/' + serviceId + '/update', serviceForm);
-  return res.data;
+  try {
+    const res = await axios.put('/admin/services/' + serviceId + '/update', serviceForm);
+    toastSuccess(res.data.message);
+    return res.data;
+  } catch (error: any) {
+    toastError(error.response.data.message);
+
+    if (error.response.data.status == 400) {
+      return error.response.data;
+    }
+  }
 }
 
 export const deleteService = async (serviceId: number) => {
-  const res = await axios.delete('/admin/services/' + serviceId + '/delete');
-  return res.data;
+  try {
+    const res = await axios.delete('/admin/services/' + serviceId + '/delete');
+    toastSuccess(res.data.message);
+    return res;
+  } catch (error: any) {
+    toastError(error.response.data.message);
+  }
 }

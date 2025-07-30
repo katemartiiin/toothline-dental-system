@@ -1,9 +1,11 @@
 import { useRef, useState, useEffect } from 'react';
 import Modal from '../../components/Modal';
+import ErrorText from '../../components/ErrorText';
 import { fetchAppointments, createAppointment, updateAppointment, updateStatus, toggleArchive, 
   type AppointmentFilters, type FormData, type UpdateFormData } from '../../api/appointments';
 import { fetchServices, type ServiceFilters } from '../../api/services';
 import {fetchUsersByRole, type UsersFilters } from '../../api/users';
+import { type FieldError } from '../../utils/toastMessage';
 interface Appointment {
   id: number;
   name: string;
@@ -35,6 +37,8 @@ const AppointmentsPage: React.FC = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [dentists, setDentists] = useState<Dentist[]>([]);
+
+  const [formErrors, setFormErrors] = useState<FieldError[]>([]);
 
   const [userFilters, setUserFilters] = useState<UsersFilters>({
     role: ""
@@ -117,6 +121,7 @@ const AppointmentsPage: React.FC = () => {
   const statusRef = useRef<string>('PENDING');
 
   const setAndEditAppt = (appt: any, isOpen: boolean) => {
+    setFormErrors([]);
     selectedAppointment.current = appt;
     setUpdateFormData({
       id: appt.id,
@@ -187,26 +192,30 @@ const AppointmentsPage: React.FC = () => {
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      const response = await createAppointment(formData);
-      console.log('Success:', response.data);
+    setFormErrors([]);
+    const createResponse = await createAppointment(formData);
+
+    if (createResponse.status == 400) {
+      setFormErrors(createResponse.errors);
+    } else {
       setFormData(defaultFormData);
       getAppointments();
-    } catch (err: any) {
-        console.error('Form submission error:', err);
     }
   };
 
   const handleFormUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      const updateResponse = await updateAppointment(updateFormData);
+    setFormErrors([]);
+
+    const updateResponse = await updateAppointment(updateFormData);
+    
+    if (updateResponse.status == 400) {
+      setFormErrors(updateResponse.errors);
+    } else {
       setOpenEdit(false);
       setUpdateFormData(defaultUpdateFormData);
       selectedAppointment.current = defaultSelectedAppointment;
       getAppointments();
-    } catch (err: any) {
-      console.error('Form submission error: ', err);
     }
   }
 
@@ -218,22 +227,17 @@ const AppointmentsPage: React.FC = () => {
       } else if (currentStatus == "IN_PROGRESS") {
         statusRef.current = "COMPLETED";
       }
-      console.log("update status");
-      try {
-        const updateStatusResponse = await updateStatus(id, statusRef.current);
+
+      const updateStatusResponse = await updateStatus(id, statusRef.current);
+      if (updateStatusResponse?.status == 200) {
         getAppointments();
-      } catch (err: any) {
-        console.error('Status update error: ', err)
       }
   }
 
   const handleToggleArchive = async (id: number) => {
-    console.log("archive");
-    try {
-      const archiveResponse = await toggleArchive(id, true);
+    const archiveResponse = await toggleArchive(id, true);
+    if (archiveResponse?.status == 200) {
       getAppointments();
-    } catch (err: any) {
-      console.error('Archive error: ', err)
     }
   }
 
@@ -283,26 +287,34 @@ const AppointmentsPage: React.FC = () => {
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Patient Name *</label>
                   <input type="text" id="name" name="name" value={formData.name} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
+                  <ErrorText field="name" errors={formErrors} />
               </div>
-              <div className="mb-4">
+              <div className="mb-4 grid grid-cols-2 gap-2">
+                <div>
                   <label className="block text-sm fw-500 toothline-text">Email *</label>
                   <input type="text" id="email" name="email" value={formData.email} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
-              </div>
-              <div className="mb-4">
-                  <label className="block text-sm fw-500 toothline-text">Phone Number *</label>
-                  <input type="text" id="phoneNumber" name="phoneNumber" value={formData.phoneNumber} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
+                  <ErrorText field="email" errors={formErrors} />
+                </div>
+                <div>
+                    <label className="block text-sm fw-500 toothline-text">Phone Number *</label>
+                    <input type="text" id="phoneNumber" name="phoneNumber" value={formData.phoneNumber} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
+                    <ErrorText field="phoneNumber" errors={formErrors} />
+                </div>
               </div>
               <div className="mb-4 grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-sm fw-500 toothline-text">Date *</label>
                   <input type="date" id="appointmentDate" name="appointmentDate" value={formData.appointmentDate} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" />
+                  <ErrorText field="appointmentDate" errors={formErrors} />
                 </div>
                 <div>
                   <label className="block text-sm fw-500 toothline-text">Time *</label>
                   <input type="time" id="appointmentTime" name="appointmentTime" value={formData.appointmentTime} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" />
+                  <ErrorText field="appointmentTime" errors={formErrors} />
                 </div>
               </div>
-              <div className="mb-4">
+              <div className="mb-4 grid grid-cols-2 gap-2">
+                <div>
                   <label className="block text-sm fw-500 toothline-text">Service *</label>
                   <select id="serviceId" name="serviceId" value={formData.serviceId} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm">
                       <option value="">Select Service</option>
@@ -316,8 +328,9 @@ const AppointmentsPage: React.FC = () => {
                         <option value="" disabled>Add a Service</option>
                       )}
                   </select>
-              </div>
-              <div className="mb-4">
+                  <ErrorText field="serviceId" errors={formErrors} />
+                </div>
+                <div>
                   <label className="block text-sm fw-500 toothline-text">Dentist</label>
                   <select id="dentistId" name="dentistId" value={formData.dentistId} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm">
                       <option value="">Select Dentist</option>
@@ -331,10 +344,16 @@ const AppointmentsPage: React.FC = () => {
                         <option value="" disabled>Add a Dentist</option>
                       )}
                   </select>
+                  <ErrorText field="dentistId" errors={formErrors} />
+                </div>
               </div>
               <div className="mb-4">
-                <label className="block text-sm fw-500 toothline-text">Additional Notes</label>
+                <label className="block text-sm fw-500 toothline-text">Additional Notes (Px)</label>
                 <textarea name="notes" value={formData.notes} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" placeholder="Type here..." />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm fw-500 toothline-text">Treatment Plan</label>
+                <textarea name="treatmentPlan" className="mt-1 block w-full rounded-md text-sm" placeholder="Type here..." />
               </div>
 
               <div className="flex justify-end space-x-2">
@@ -364,20 +383,33 @@ const AppointmentsPage: React.FC = () => {
           >
             <div>
               <div className="mb-4">
-                  <label className="block text-sm fw-500 toothline-text">Patient Info</label>
-                  <input type="text" id="patientName" name="patientName" value={selectedAppointment.current.name} className="mt-1 block w-full rounded-md text-sm" readOnly />
+                <label className="block text-sm fw-500 toothline-text">Patient Name</label>
+                <p>{selectedAppointment.current.name}</p>
+              </div>
+              <div className="mb-4 grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-sm fw-500 toothline-text">Email</label>
+                  <p>{selectedAppointment.current.email}</p>
+                </div>
+                <div>
+                  <label className="block text-sm fw-500 toothline-text">Phone Number</label>
+                  <p>{selectedAppointment.current.phoneNumber}</p>
+                </div>
               </div>
               <div className="mb-4 grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-sm fw-500 toothline-text">Date</label>
                   <input type="date" id="appointmentDate" name="appointmentDate" value={updateFormData.appointmentDate} onChange={handleUpdateFormChange} className="mt-1 block w-full rounded-md text-sm" />
+                  <ErrorText field="appointmentDate" errors={formErrors} />
                 </div>
                 <div>
                   <label className="block text-sm fw-500 toothline-text">Time</label>
                   <input type="time" id="appointmentTime" name="appointmentTime" value={updateFormData.appointmentTime} onChange={handleUpdateFormChange} className="mt-1 block w-full rounded-md text-sm" />
+                  <ErrorText field="appointmentTime" errors={formErrors} />
                 </div>
               </div>
-              <div className="mb-4">
+              <div className="mb-4 grid grid-cols-2 gap-2">
+                <div>
                   <label className="block text-sm fw-500 toothline-text">Service</label>
                   <select id="serviceType" name="serviceId" value={updateFormData.serviceId} onChange={handleUpdateFormChange} className="mt-1 block w-full rounded-md text-sm">
                       <option value="">Select Service</option>
@@ -391,8 +423,9 @@ const AppointmentsPage: React.FC = () => {
                         <option value="" disabled>Add a Service</option>
                       )}
                   </select>
-              </div>
-              <div className="mb-4">
+                  <ErrorText field="serviceId" errors={formErrors} />
+                </div>
+                <div>
                   <label className="block text-sm fw-500 toothline-text">Dentist</label>
                   <select id="dentist" name="dentistId" value={updateFormData.dentistId} onChange={handleUpdateFormChange} className="mt-1 block w-full rounded-md text-sm">
                       <option value="">Select Dentist</option>
@@ -406,20 +439,27 @@ const AppointmentsPage: React.FC = () => {
                         <option value="" disabled>Add a Dentist</option>
                       )}
                   </select>
+                  <ErrorText field="dentistId" errors={formErrors} />
+                </div>
               </div>
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Status</label>
                   <select id="status" name="status" value={updateFormData.status} onChange={handleUpdateFormChange} className="mt-1 block w-full rounded-md text-sm">
                       <option value="PENDING">Pending</option>
                       <option value="CONFIRMED">Confirmed</option>
-                      <option value="IN_PROGRESS">IN_PROGRESS</option>
+                      <option value="IN_PROGRESS">In Progress</option>
                       <option value="CANCELLED">Cancelled</option>
                       <option value="COMPLETED">Completed</option>
                   </select>
+                  <ErrorText field="status" errors={formErrors} />
               </div>
               <div className="mb-4">
-                <label className="block text-sm fw-500 toothline-text">Additional Notes</label>
-                <textarea name="notes" value={updateFormData.notes} onChange={handleUpdateFormChange} className="mt-1 block w-full rounded-md text-sm" placeholder="Type here..." />
+                <label className="block text-sm fw-500 toothline-text">Additional Notes (Px)</label>
+                <textarea name="notes" value={updateFormData.notes} onChange={handleUpdateFormChange} className="bg-gray-100 mt-1 block w-full rounded-md text-sm" disabled readOnly />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm fw-500 toothline-text">Treatment Plan</label>
+                <textarea name="treatmentPlan" className="mt-1 block w-full rounded-md text-sm" placeholder="Type here..." />
               </div>
 
               <div className="flex justify-end space-x-2">
@@ -468,7 +508,7 @@ const AppointmentsPage: React.FC = () => {
                     : appt.status === 'PENDING' ? 'text-yellow-500'
                     : appt.status === 'IN_PROGRESS' ? 'toothline-text-primary'
                     : 'toothline-error' }`}>
-                {appt.status}
+                {appt.status.replace(/_/g, " ")}
               </p>
               <div>
                 <button type="button" onClick={() => setAndEditAppt(appt, true)} className="toothline-text-accent fw-500">Edit</button>

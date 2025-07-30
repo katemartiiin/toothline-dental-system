@@ -1,4 +1,5 @@
 import axios from '../lib/axios';
+import { toastError, toastInfo, toastSuccess  } from '../utils/toastMessage';
 
 export interface UpdateUserForm {
   role: string;
@@ -13,8 +14,13 @@ export interface AuditLogData {
 }
 
 export const updateUserAsAdmin = async (userId: number, updateUserForm: UpdateUserForm) => {
-  const res = await axios.put('/admin/users/' + userId + '/update', updateUserForm);
-  return res.data;
+  try {
+    const res = await axios.put('/admin/users/' + userId + '/update', updateUserForm);
+    toastSuccess(res.data.message);
+    return res;
+  } catch (error: any) {
+    toastError(error.response.data.message);
+  }
 };
 
 export const fetchLogs = async () => {

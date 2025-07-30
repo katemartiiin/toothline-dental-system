@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import Modal from '../../components/Modal';
+import ErrorText from '../../components/ErrorText';
 import { fetchServices, createService, updateService, deleteService, 
   type ServiceForm, type ServiceFilters } from '../../api/services';
+import { type FieldError } from '../../utils/toastMessage';
 interface Service {
   id: number;
   name: string;
@@ -11,6 +13,7 @@ interface Service {
 }
 const ServicesPage: React.FC = () => {
   const [services, setServices] = useState<Service[]>([]);
+  const [formErrors, setFormErrors] = useState<FieldError[]>([]);
 
   const defaultServiceForm = {
     name: '',
@@ -62,6 +65,7 @@ const ServicesPage: React.FC = () => {
   };
 
   const handleSelectedService = (service: Service, type: string) => {
+    setFormErrors([]);
     setSelectedService(service);
     
     type == 'update' ? setOpenEdit(true) : setOpenDelete(true);
@@ -77,32 +81,35 @@ const ServicesPage: React.FC = () => {
   };
 
   const createNewService = async () => {
-    try {
-      const createData = await createService(serviceForm);
+    setFormErrors([]);
+    const createResponse = await createService(serviceForm);
+    
+    if (createResponse.status == 400) {
+      setFormErrors(createResponse.errors);
+    } else {
       setServiceForm(defaultServiceForm);
       getServices();
-    } catch (error) {
-      console.log('Failed to create service', error);
     }
   };
 
   const editService = async () => {
-    try {
-      const updateData = await updateService(selectedService.id, selectedService);
+    setFormErrors([]);
+    const updateResponse = await updateService(selectedService.id, selectedService);
+    
+    if (updateResponse.status == 400) {
+      setFormErrors(updateResponse.errors);
+    } else {
       getServices();
       setOpenEdit(false);
-    } catch (error) {
-      console.log('Failed to update service', error);
     }
   };
 
   const deleteServ = async () => {
-    try {
-      const deleteData = await deleteService(selectedService.id);
+    const deleteResponse = await deleteService(selectedService.id);
+    
+    if (deleteResponse?.status == 200) {
       getServices();
       setOpenDelete(false);
-    } catch (error) {
-      console.log('Failed to delete service', error);
     }
   };
 
@@ -135,6 +142,7 @@ const ServicesPage: React.FC = () => {
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Service Name</label>
                   <input type="text" id="serviceName" name="name" value={serviceForm.name} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
+                  <ErrorText field="name" errors={formErrors} />
               </div>
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Description</label>
@@ -144,10 +152,12 @@ const ServicesPage: React.FC = () => {
                 <div>
                   <label className="block text-sm fw-500 toothline-text">Price ($)</label>
                   <input type="number" id="price" name="price" value={serviceForm.price} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" step="0.01" min="0" placeholder="e.g., 250.00" />
+                  <ErrorText field="price" errors={formErrors} />
                 </div>
                 <div>
-                    <label className="block text-sm fw-500 toothline-text">Duration</label>
-                    <input type="number" id="duration" name="durationMinutes" value={serviceForm.durationMinutes} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" min="1" placeholder="e.g., 60" />
+                  <label className="block text-sm fw-500 toothline-text">Duration</label>
+                  <input type="number" id="duration" name="durationMinutes" value={serviceForm.durationMinutes} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" min="1" placeholder="e.g., 60" />
+                  <ErrorText field="durationMinutes" errors={formErrors} />
                 </div>
               </div>
 
@@ -180,6 +190,7 @@ const ServicesPage: React.FC = () => {
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Service Name</label>
                   <input type="text" id="serviceName" name="name" value={selectedService.name} onChange={handleFormUpdate} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
+                  <ErrorText field="name" errors={formErrors} />
               </div>
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Description</label>
@@ -189,10 +200,12 @@ const ServicesPage: React.FC = () => {
                 <div>
                   <label className="block text-sm fw-500 toothline-text">Price ($)</label>
                   <input type="number" id="servicePrice" name="price" value={selectedService.price} onChange={handleFormUpdate} className="mt-1 block w-full rounded-md text-sm" step="0.01" min="0" placeholder="e.g., 250.00" />
+                  <ErrorText field="price" errors={formErrors} />
                 </div>
                 <div>
                     <label className="block text-sm fw-500 toothline-text">Duration</label>
                     <input type="number" id="serviceDuration" name="durationMinutes" value={selectedService.durationMinutes} onChange={handleFormUpdate} className="mt-1 block w-full rounded-md text-sm" min="1" placeholder="e.g., 60" />
+                    <ErrorText field="durationMinutes" errors={formErrors} />
                 </div>
               </div>
 

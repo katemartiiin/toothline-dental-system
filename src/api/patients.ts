@@ -1,4 +1,5 @@
 import axios from '../lib/axios';
+import { toastError, toastSuccess } from '../utils/toastMessage';
 
 export interface PatientFilters {
   name?: string;
@@ -16,18 +17,42 @@ export const fetchPatients = async (filters: PatientFilters) => {
 };
 
 export const createPatient = async (patientForm: PatientForm) => {
-  const res = await axios.post('/admin/patients', patientForm)
-  return res.data;
+  try {
+    const res = await axios.post('/admin/patients', patientForm)
+    toastSuccess(res.data.message);
+    return res.data;
+
+  } catch (error: any) {
+    toastError(error.response.data.message);
+
+    if (error.response.data.status == 400) {
+      return error.response.data;
+    }
+  }
 }
 
 export const updatePatient = async (patientId: number, patientForm: PatientForm) => {
-  const res = await axios.put('/admin/patients/' + patientId + '/update', patientForm);
-  return res.data;
+  try {
+    const res = await axios.put('/admin/patients/' + patientId + '/update', patientForm);
+    toastSuccess(res.data.message);
+    return res.data;
+  } catch (error: any) {
+    toastError(error.response.data.message);
+
+    if (error.response.data.status == 400) {
+      return error.response.data;
+    }
+  }
 }
 
 export const archivePatient = async (patientId: number, isArchive: boolean) => {
-  const res = await axios.put('/admin/patients/' + patientId + '/archive', null, {
-    params: {archived: isArchive }
-  });
-  return res.data;
+  try {
+    const res = await axios.put('/admin/patients/' + patientId + '/archive', null, {
+      params: {archived: isArchive }
+    });
+    toastSuccess(res.data.message);
+    return res;
+  } catch (error: any) {
+    toastError(error.response.data.message);
+  }
 }

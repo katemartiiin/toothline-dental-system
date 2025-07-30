@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import Modal from '../../components/Modal';
+import ErrorText from '../../components/ErrorText';
 import ResetPassword from '../../components/security/ResetPassword';
 import AuditLogs from '../../components/security/AuditLogs';
 import { fetchUsersByRole, createUser, type UserForm, type User, type UsersFilters} from '../../api/users';
 import { updateUserAsAdmin, type UpdateUserForm } from '../../api/security';
+import { type FieldError } from '../../utils/toastMessage';
 
 const SecurityPage: React.FC = () => {
   const [openCreate, setOpenCreate] = useState(false);
@@ -11,6 +13,7 @@ const SecurityPage: React.FC = () => {
   const [openLock, setOpenLock] = useState(false);
 
   const [users, setUsers] = useState<User[]>([]);
+  const [formErrors, setFormErrors] = useState<FieldError[]>([]);
   const [userFilters, setUserFilters] = useState<UsersFilters>({
     role: ""
   });
@@ -18,7 +21,7 @@ const SecurityPage: React.FC = () => {
   const defaultUserForm = {
     name: '',
     email: '',
-    role: ''
+    role: 'ADMIN'
   }
 
   const defaultUserUpdateForm = {
@@ -58,6 +61,7 @@ const SecurityPage: React.FC = () => {
   };
 
   const handleUserUpdate = (user: User | any, type: string) => {
+    setFormErrors([]);
     setUser(user);
 
     if (type == 'edit') {
@@ -72,25 +76,24 @@ const SecurityPage: React.FC = () => {
   };
 
   const createNewUser = async () => {
-    try {
-      const res = await createUser(userForm);
+    const createResponse = await createUser(userForm);
+    
+    if (createResponse.status == 400) {
+      setFormErrors(createResponse.errors);
+    } else {
       setUserForm(defaultUserForm);
       getUsers();
-    } catch (error) {
-      console.error('Failed to create user', error);
     }
   };
 
   const updateUserData = async () => {
-    try {
-      const res = await updateUserAsAdmin(user.id, updateUserForm);
+    const updateResponse = await updateUserAsAdmin(user.id, updateUserForm);
+    
+    if (updateResponse?.status == 200) {
       setUpdateUserForm(defaultUserUpdateForm);
       setOpenEdit(false);
       setOpenLock(false);
       getUsers();
-    }
-    catch (error) {
-      console.error('Failed to update user', error);
     }
   };
 
@@ -156,10 +159,12 @@ const SecurityPage: React.FC = () => {
                 <div className="mb-4">
                     <label className="block text-sm fw-500 toothline-text">Name</label>
                     <input type="text" id="name" name="name" value={userForm.name} onChange={handleUserForm} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
+                    <ErrorText field="name" errors={formErrors} />
                 </div>
                 <div className="mb-4">
                     <label className="block text-sm fw-500 toothline-text">Email</label>
                     <input type="email" id="email" name="email" value={userForm.email} onChange={handleUserForm} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., janedoe@example.com" />
+                    <ErrorText field="email" errors={formErrors} />
                 </div>
                 <div className="mb-4">
                     <label className="block text-sm fw-500 toothline-text">Role</label>
@@ -168,6 +173,7 @@ const SecurityPage: React.FC = () => {
                         <option value="DENTIST">Dentist</option>
                         <option value="STAFF">Staff</option>
                     </select>
+                    <ErrorText field="role" errors={formErrors} />
                 </div>
 
                 <div className="mt-4 flex justify-end space-x-2">
@@ -211,6 +217,7 @@ const SecurityPage: React.FC = () => {
                         <option value="DENTIST">Dentist</option>
                         <option value="STAFF">Staff</option>
                     </select>
+                    <ErrorText field="role" errors={formErrors} />
                 </div>
                 <div className="mt-4 flex justify-end space-x-2">
                   <button

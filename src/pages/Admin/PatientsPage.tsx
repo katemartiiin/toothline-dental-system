@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { fetchPatients, createPatient, updatePatient, archivePatient, 
   type PatientForm, type PatientFilters } from '../../api/patients';
+import { type FieldError } from '../../utils/toastMessage';
 import Modal from '../../components/Modal';
+import ErrorText from '../../components/ErrorText';
 interface Patient {
   id: number;
   name: string;
@@ -10,6 +12,7 @@ interface Patient {
 }
 const PatientsPage: React.FC = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
+  const [formErrors, setFormErrors] = useState<FieldError[]>([]);
   
   const defaultPatientForm = {
     name: '',
@@ -59,6 +62,7 @@ const PatientsPage: React.FC = () => {
   };
 
   const handleSelectedPatient = (patient: Patient, type: string) => {
+      setFormErrors([]);
       setSelectedPatient(patient);
       
       type == 'update' ? setOpenEdit(true) : setOpenDelete(true);
@@ -74,32 +78,33 @@ const PatientsPage: React.FC = () => {
   };
 
   const createNewPatient = async () => {
-      try {
-        const createData = await createPatient(patientForm);
+      const createResponse = await createPatient(patientForm);
+      
+      if (createResponse.status == 400) {
+        setFormErrors(createResponse.errors);
+      } else {
         setPatientForm(defaultPatientForm);
         getPatients();
-      } catch (error) {
-        console.log('Failed to create patient', error);
       }
   };
   
   const editPatient = async () => {
-    try {
-      const updateData = await updatePatient(selectedPatient.id, selectedPatient);
+    const updateResponse = await updatePatient(selectedPatient.id, selectedPatient);
+    
+    if (updateResponse.status == 400) {
+      setFormErrors(updateResponse.errors);
+    } else {
       getPatients();
       setOpenEdit(false);
-    } catch (error) {
-      console.log('Failed to update patient', error);
     }
   };
   
   const archivePt = async (isArchive: boolean) => {
-    try {
-      const archiveData = await archivePatient(selectedPatient.id, isArchive);
+    const archiveResponse = await archivePatient(selectedPatient.id, isArchive);
+    
+    if (archiveResponse?.status == 200) {
       getPatients();
       setOpenDelete(false);
-    } catch (error) {
-      console.log('Failed to archive patient', error);
     }
   };
 
@@ -133,14 +138,17 @@ const PatientsPage: React.FC = () => {
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Patient Name</label>
                   <input type="text" id="name" name="name" value={patientForm.name} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
+                  <ErrorText field="name" errors={formErrors} />
               </div>
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Email</label>
                   <input type="email" id="email" name="email" value={patientForm.email} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., janedoe@example.com" />
+                  <ErrorText field="email" errors={formErrors} />
               </div>
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Phone Number</label>
                   <input type="text" id="phoneNumber" name="phoneNumber" value={patientForm.phoneNumber} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., 09123456789" />
+                  <ErrorText field="phoneNumber" errors={formErrors} />
               </div>
 
               <div className="flex justify-end space-x-2">
@@ -172,14 +180,17 @@ const PatientsPage: React.FC = () => {
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Patient Name</label>
                   <input type="text" id="patientName" name="name" value={selectedPatient.name} onChange={handleFormUpdate} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
+                  <ErrorText field="name" errors={formErrors} />
               </div>
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Email</label>
                   <input type="email" id="patientEmail" name="email" value={selectedPatient.email} onChange={handleFormUpdate} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., janedoe@example.com" />
+                  <ErrorText field="email" errors={formErrors} />
               </div>
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Phone Number</label>
                   <input type="text" id="patientPhoneNumber" name="phoneNumber" value={selectedPatient.phoneNumber} onChange={handleFormUpdate} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., 09123456789" />
+                  <ErrorText field="phoneNumber" errors={formErrors} />
               </div>
               
               <div className="flex justify-end space-x-2">

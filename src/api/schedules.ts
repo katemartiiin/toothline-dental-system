@@ -1,4 +1,5 @@
 import axios from '../lib/axios';
+import { toastError, toastSuccess  } from '../utils/toastMessage';
 
 export type ScheduleDay =
   | 'MONDAY'
@@ -28,7 +29,7 @@ export interface DentistSchedule {
 
 export interface ScheduleForm {
   dentistId: string;
-  schedDay: string;
+  schedDay: string | null;
   startTime: string;
   endTime: string;
   status: string;
@@ -48,16 +49,40 @@ export const fetchSchedules = async (dentistId: number | any) => {
 };
 
 export const createSchedule = async (scheduleForm : ScheduleForm) => {
-  const res = await axios.post('/admin/schedules', scheduleForm);
-  return res.data;
+  try {
+    const res = await axios.post('/admin/schedules', scheduleForm);
+    toastSuccess(res.data.message);
+    return res.data;
+
+  } catch (error: any) {
+    toastError(error.response.data.message);
+
+    if (error.response.data.status == 400) {
+      return error.response.data;
+    }
+  }
 }
 
 export const updateSchedule = async (updateScheduleForm: UpdateScheduleForm) => {
-  const res = await axios.put('/admin/schedules/' + updateScheduleForm.id + '/update', updateScheduleForm);
-  return res.data;
+  try {
+    const res = await axios.put('/admin/schedules/' + updateScheduleForm.id + '/update', updateScheduleForm);
+    toastSuccess(res.data.message);
+    return res.data;
+  } catch (error: any) {
+    toastError(error.response.data.message);
+
+    if (error.response.data.status == 400) {
+      return error.response.data;
+    }
+  }
 }
 
 export const deleteSchedule = async (scheduleId: number | any) => {
-  const res = await axios.delete('/admin/schedules/' + scheduleId + '/delete');
-  return res.data;
+  try {
+    const res = await axios.delete('/admin/schedules/' + scheduleId + '/delete');
+    toastSuccess(res.data.message);
+    return res;
+  } catch (error: any) {
+    toastError(error.response.data.message);
+  }
 }

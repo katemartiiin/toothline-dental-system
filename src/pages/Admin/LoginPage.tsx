@@ -1,22 +1,31 @@
 import logo from '../../assets/logo-admin-white.png';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import axios from 'axios';
+import { type FieldError } from '../../utils/toastMessage';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import ErrorText from '../../components/ErrorText';
 const LoginPage: React.FC = () => {
   const [credentials, setCredentials] = useState({ email: '', password: '' });
-  const [error, setError] = useState('');
+  const [formErrors, setFormErrors] = useState<FieldError[]>([]);
+
   const { login } = useAuth();
   const navigate = useNavigate();
+  const invalidCreds = useRef<string>("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormErrors([]);
     try {
       const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/auth/login`, credentials);
       login(res.data);
       navigate('/admin/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed');
+      if (err.response.data.status == 400) {
+        setFormErrors(err.response.data.errors);
+      } else if (err.response.data.status == 401) {
+        invalidCreds.current = err.response.data.message;
+      }
     }
   };
 
@@ -42,6 +51,7 @@ const LoginPage: React.FC = () => {
               onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
               className="w-full px-3 py-2 rounded bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-300 text-sm"
             />
+            <ErrorText field="email" errors={formErrors} />
           </div>
 
           <div className="mb-4">
@@ -55,6 +65,10 @@ const LoginPage: React.FC = () => {
               onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
               className="w-full px-3 py-2 rounded bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-300 text-sm"
             />
+            <ErrorText field="password" errors={formErrors} />
+            {invalidCreds && (
+              <p className="mt-1 text-xs toothline-error">{invalidCreds.current}</p>
+            )}
             <div className="text-right mt-1">
               <a href="#" className="text-xs text-white hover:underline">
                 Forgot your password?

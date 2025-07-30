@@ -21,12 +21,10 @@ const ResetPassword = ({ users }: ResetPasswordProps) => {
 
     const resetUserPassword = async () => {
         updateUserForm.resetPassword = true;
-        try {
-            const res = await updateUserAsAdmin(userId, updateUserForm);
-            setOpenReset(false);
-            setUserId(0);
-        } catch (error) {
-            console.error('Failed to update user', error);
+        const resetResponse = await updateUserAsAdmin(userId, updateUserForm);
+        if (resetResponse?.status == 200) {
+          setOpenReset(false);
+          setUserId(0);
         }
     }
   return (

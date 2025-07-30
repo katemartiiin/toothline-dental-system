@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import Modal from '../../components/Modal';
+import ErrorText from '../../components/ErrorText';
 import { Pencil, Trash } from 'lucide-react';
 import { fetchSchedules, deleteSchedule, createSchedule, updateSchedule, 
   type DentistSchedule, type ScheduleForm, type UpdateScheduleForm, type ScheduleDay, scheduleDays } from '../../api/schedules';
 import {fetchUsersByRole, type UsersFilters } from '../../api/users';
+import { type FieldError } from '../../utils/toastMessage';
 interface Dentist {
   id: number;
   email: string;
@@ -17,10 +19,11 @@ const DentistSchedulesPage: React.FC = () => {
   const [openDelete, setOpenDelete] = useState(false);
   const [checked, setChecked] = useState(false);
   const [checkedEdit, setCheckedEdit] = useState(false);
+  const [formErrors, setFormErrors] = useState<FieldError[]>([]);
 
   const defaultScheduleForm = {
     dentistId: '',
-    schedDay: '',
+    schedDay: null,
     startTime: '',
     endTime: '',
     status: 'AVAILABLE',
@@ -54,6 +57,7 @@ const DentistSchedulesPage: React.FC = () => {
   const selectedSchedule = useRef(defaultUpdateSchedForm);
 
   const setAndEditSched = (sched: any, isOpen: boolean) => {
+    setFormErrors([]);
     selectedSchedule.current = sched;
     setUpdateScheduleForm({
       id: sched.id,
@@ -117,32 +121,34 @@ const DentistSchedulesPage: React.FC = () => {
   }
 
   const deleteDentistSched = async () => {
-    try {
-      const dataDelete = await deleteSchedule(selectedSchedId.current);
+    const deleteResponse = await deleteSchedule(selectedSchedId.current);
+    if (deleteResponse?.status == 200) {
       setOpenDelete(false);
       fetchDentistSchedules(selectedDentist?.id);
-    } catch (error) {
-      console.error('Failed to delete schedule', error)
     }
   };
 
   const createDentistSched = async () => {
-    try {
-      const dataCreate = await createSchedule(scheduleForm);
+    setFormErrors([]);
+    const createResponse = await createSchedule(scheduleForm);
+    
+    if (createResponse.status == 400) {
+      setFormErrors(createResponse.errors);
+    } else {
       setScheduleForm(defaultScheduleForm);
       fetchDentistSchedules(selectedDentist?.id);
-    } catch (error) {
-      console.error('Failed to create schedule', error);
     }
   }
 
   const updateDentistSched = async () => {
-    try {
-      const dataUpdate = await updateSchedule(updateSchedForm);
+    setFormErrors([]);
+    const updateResponse = await updateSchedule(updateSchedForm);
+    
+    if (updateResponse.status == 400) {
+      setFormErrors(updateResponse.errors);
+    } else {
       setUpdateScheduleForm(defaultUpdateSchedForm);
       fetchDentistSchedules(selectedDentist?.id);
-    } catch (error) {
-      console.error('Failed to update schedule', error);
     }
   }
 
@@ -198,10 +204,12 @@ const DentistSchedulesPage: React.FC = () => {
                         <option value="" disabled selected>No Dentist/s yet</option>
                       )}
                   </select>
+                  <ErrorText field="dentistId" errors={formErrors} />
               </div>
-              <div className="mb-4">
+              <div className="mb-4 grid grid-cols-2 gap-2">
+                <div>
                   <label className="block text-sm fw-500 toothline-text">Day</label>
-                  <select id="schedDay" name="schedDay" value={scheduleForm.schedDay} onChange={handleScheduleFormChange} className="mt-1 block w-full rounded-md text-sm">
+                  <select id="schedDay" name="schedDay" value={scheduleForm.schedDay ? scheduleForm.schedDay : ""} onChange={handleScheduleFormChange} className="mt-1 block w-full rounded-md text-sm">
                       <option value="">Select day</option>
                       {scheduleDays.map((day) => (
                         <option key={day} value={day}>
@@ -209,35 +217,29 @@ const DentistSchedulesPage: React.FC = () => {
                         </option>
                       ))}
                   </select>
-              </div>
-              {/* <div className="mb-4">
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
-                    checked={checked}
-                    onChange={(e) => setChecked(e.target.checked)}
-                  />
-                  <span className="text-gray-700">All Day</span>
-                </label>
-              </div> */}
-              <div className="mb-4 grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-sm fw-500 toothline-text">Start Time</label>
-                  <input type="time" id="startTime" name="startTime" value={scheduleForm.startTime} onChange={handleScheduleFormChange} className="mt-1 block w-full rounded-md text-sm" />
+                  <ErrorText field="schedDay" errors={formErrors} />
                 </div>
                 <div>
-                  <label className="block text-sm fw-500 toothline-text">End Time</label>
-                  <input type="time" id="endTime" name="endTime" value={scheduleForm.endTime} onChange={handleScheduleFormChange} className="mt-1 block w-full rounded-md text-sm" />
-                </div>
-              </div>
-              <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Status</label>
                   <select id="status" name="status" value={scheduleForm.status} onChange={handleScheduleFormChange} className="mt-1 block w-full rounded-md text-sm">
                       <option value="AVAILABLE">Available</option>
                       <option value="BREAK">Break</option>
                       <option value="UNAVAILABLE">Unavailable</option>
                   </select>
+                  <ErrorText field="status" errors={formErrors} />
+                </div>
+              </div>
+              <div className="mb-4 grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-sm fw-500 toothline-text">Start Time</label>
+                  <input type="time" id="startTime" name="startTime" value={scheduleForm.startTime} onChange={handleScheduleFormChange} className="mt-1 block w-full rounded-md text-sm" />
+                  <ErrorText field="startTime" errors={formErrors} />
+                </div>
+                <div>
+                  <label className="block text-sm fw-500 toothline-text">End Time</label>
+                  <input type="time" id="endTime" name="endTime" value={scheduleForm.endTime} onChange={handleScheduleFormChange} className="mt-1 block w-full rounded-md text-sm" />
+                  <ErrorText field="endTime" errors={formErrors} />
+                </div>
               </div>
               <div className="flex justify-end space-x-2">
                 <button
@@ -268,34 +270,26 @@ const DentistSchedulesPage: React.FC = () => {
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">{selectedSchedule.current.schedDay}</label>
               </div>
-              {/* <div className="mb-4">
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
-                    checked={checkedEdit}
-                    onChange={(e) => setCheckedEdit(e.target.checked)}
-                  />
-                  <span className="text-gray-700">All Day</span>
-                </label>
-              </div> */}
               <div className="mb-4 grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-sm fw-500 toothline-text">Start Time</label>
                   <input type="time" id="startTimeUp" name="startTime" value={updateSchedForm.startTime} onChange={handleUpdateSchedFormChange} className="mt-1 block w-full rounded-md text-sm" />
+                  <ErrorText field="startTime" errors={formErrors} />
                 </div>
                 <div>
                   <label className="block text-sm fw-500 toothline-text">End Time</label>
                   <input type="time" id="endTimeUp" name="endTime" value={updateSchedForm.endTime} onChange={handleUpdateSchedFormChange} className="mt-1 block w-full rounded-md text-sm" />
+                  <ErrorText field="endTime" errors={formErrors} />
                 </div>
               </div>
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Status</label>
                   <select id="status" name="status" value={updateSchedForm.status} onChange={handleUpdateSchedFormChange} className="mt-1 block w-full rounded-md text-sm">
-                      <option value="available">Available</option>
-                      <option value="break">Break</option>
-                      <option value="break">Unavailable</option>
+                      <option value="AVAILABLE">Available</option>
+                      <option value="BREAK">Break</option>
+                      <option value="UNAVAILABLE">Unavailable</option>
                   </select>
+                  <ErrorText field="status" errors={formErrors} />
               </div>
 
               <div className="flex justify-end space-x-2">

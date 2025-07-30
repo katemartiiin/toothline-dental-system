@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
+import ErrorText from '../../components/ErrorText';
+import { type FieldError } from '../../utils/toastMessage';
 import { fetchCurrentUser, updateProfile, type ProfileForm  } from '../../api/users';
 const UserProfilePage: React.FC = () => {
+  const [formErrors, setFormErrors] = useState<FieldError[]>([]);
   const [profileForm, setProfileForm] = useState<ProfileForm>({
     name: '',
     email: '',
@@ -35,11 +38,13 @@ const UserProfilePage: React.FC = () => {
   }
 
   const updateUserProfile = async () => {
-    try {
-      const res = await updateProfile(profileForm);
+    setFormErrors([]);
+    const updateResponse = await updateProfile(profileForm);
+    
+    if (updateResponse.status == 400) {
+      setFormErrors(updateResponse.errors);
+    } else {
       getCurrentUser();
-    } catch (error) {
-      console.error('Failed to update profile', error)
     }
   };
 
@@ -57,10 +62,12 @@ const UserProfilePage: React.FC = () => {
             <div className="mb-4">
                 <label className="block text-sm fw-500 toothline-text">Name</label>
                 <input type="text" id="name" name="name" value={profileForm.name} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
+                <ErrorText field="name" errors={formErrors} />
             </div>
             <div className="mb-4">
                 <label className="block text-sm fw-500 toothline-text">Email</label>
                 <input type="email" id="email" name="email" value={profileForm.email} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., janedoe@example.com" />
+                <ErrorText field="email" errors={formErrors} />
             </div>
 
             <div className="text-right">
@@ -77,14 +84,17 @@ const UserProfilePage: React.FC = () => {
             <div className="mb-4">
                 <label className="block text-sm fw-500 toothline-text">Current Password</label>
                 <input type="password" id="currentPassword" name="currentPassword" value={profileForm.currentPassword} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" placeholder="Enter current password" />
+                <ErrorText field="currentPassword" errors={formErrors} />
             </div>
             <div className="mb-4">
                 <label className="block text-sm fw-500 toothline-text">New Password</label>
                 <input type="password" id="newPassword" name="newPassword" value={profileForm.newPassword} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" placeholder="Enter new password" />
+                <ErrorText field="newPassword" errors={formErrors} />
             </div>
             <div className="mb-4">
                 <label className="block text-sm fw-500 toothline-text">Confirm Password</label>
                 <input type="password" id="confirmPassword" name="confirmPassword" value={profileForm.confirmPassword} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" placeholder="Confirm new password" />
+                <ErrorText field="confirmPassword" errors={formErrors} />
             </div>
 
             <div className="text-right">
