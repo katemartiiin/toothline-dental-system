@@ -34,7 +34,6 @@ export interface ScheduleForm {
   endTime: string;
   status: string;
 }
-
 export interface UpdateScheduleForm {
   id: string;
   schedDay: string;
@@ -42,7 +41,7 @@ export interface UpdateScheduleForm {
   endTime: string;
   status: string;
 }
-
+// Used by staff and admin
 export const fetchSchedules = async (dentistId: number | any) => {
   const res = await axios.get('/admin/schedules/' + dentistId + '/fetch');
   return res.data;
@@ -51,6 +50,27 @@ export const fetchSchedules = async (dentistId: number | any) => {
 export const createSchedule = async (scheduleForm : ScheduleForm) => {
   try {
     const res = await axios.post('/admin/schedules', scheduleForm);
+    toastSuccess(res.data.message);
+    return res.data;
+
+  } catch (error: any) {
+    toastError(error.response.data.message);
+
+    if (error.response.data.status == 400) {
+      return error.response.data;
+    }
+  }
+}
+
+// Used by dentist
+export const fetchMySchedules = async () => {
+  const res = await axios.get('/admin/schedules/me/fetch');
+  return res.data;
+}
+
+export const createMySchedule = async (scheduleForm : ScheduleForm) => {
+  try {
+    const res = await axios.post('/admin/schedules/me', scheduleForm);
     toastSuccess(res.data.message);
     return res.data;
 

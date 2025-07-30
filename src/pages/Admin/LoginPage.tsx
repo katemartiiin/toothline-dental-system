@@ -19,7 +19,8 @@ const LoginPage: React.FC = () => {
     try {
       const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/auth/login`, credentials);
       login(res.data);
-      navigate('/admin/dashboard');
+      window.location.href = `${import.meta.env.VITE_APP_URL}/admin/dashboard`;
+      // navigate('/admin/dashboard');
     } catch (err: any) {
       if (err.response.data.status == 400) {
         setFormErrors(err.response.data.errors);

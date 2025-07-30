@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import Modal from '../../components/Modal';
 import ErrorText from '../../components/ErrorText';
 import { Pencil, Trash } from 'lucide-react';
-import { fetchSchedules, deleteSchedule, createSchedule, updateSchedule, 
+import { fetchSchedules, fetchMySchedules, createSchedule, createMySchedule, updateSchedule, deleteSchedule,
   type DentistSchedule, type ScheduleForm, type UpdateScheduleForm, type ScheduleDay, scheduleDays } from '../../api/schedules';
 import {fetchUsersByRole, type UsersFilters } from '../../api/users';
 import { type FieldError } from '../../utils/toastMessage';
@@ -14,11 +15,10 @@ interface Dentist {
 }
 type GroupedSchedules = Record<ScheduleDay, DentistSchedule[]>;
 const DentistSchedulesPage: React.FC = () => {
+  const { userName, userRole } = useAuth();
   const [openCreate, setOpenCreate] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
-  const [checked, setChecked] = useState(false);
-  const [checkedEdit, setCheckedEdit] = useState(false);
   const [formErrors, setFormErrors] = useState<FieldError[]>([]);
 
   const defaultScheduleForm = {
@@ -69,9 +69,9 @@ const DentistSchedulesPage: React.FC = () => {
     setOpenEdit(isOpen);
   }
 
-  const fetchDentistSchedules = async (dentistId: number) => {
+  const fetchDentistSchedules = async (dentistId: number | null) => {
     try {
-      const res = await fetchSchedules(dentistId);
+      const res = userRole == 'DENTIST' ? await fetchMySchedules() : await fetchSchedules(dentistId);
       setSchedules(res);
     } catch (err) {
       console.error('Failed to fetch dentist schedule: ' + err);
@@ -130,7 +130,7 @@ const DentistSchedulesPage: React.FC = () => {
 
   const createDentistSched = async () => {
     setFormErrors([]);
-    const createResponse = await createSchedule(scheduleForm);
+    const createResponse = userRole == 'DENTIST' ? await createMySchedule(scheduleForm) : await createSchedule(scheduleForm);
     
     if (createResponse.status == 400) {
       setFormErrors(createResponse.errors);
@@ -153,25 +153,42 @@ const DentistSchedulesPage: React.FC = () => {
   }
 
   useEffect(() => {
-    getDentists();
+    userRole == 'DENTIST' ? fetchDentistSchedules(null) : getDentists();
   }, []);
   return (
     <div className="w-full flex flex-wrap px-16 py-2">
       <div className="w-full flex flex-wrap">
         <div className="w-1/2 text-sm">
-          <label className="text-sm fw-500 toothline-text">Select Dentist: </label>
-          <select id="dentistId" name="dentistId" onChange={handleDentistChange} value={selectedDentist?.id} className="rounded-md text-sm">
-              <option value="0">Select Dentist</option>
-              {dentists?.length ? (
-                dentists.map((dentist) => (
-                <option key={dentist.id} value={dentist.id}>
-                {dentist.name}
-                </option>
-                ))
-              ) : (
-                <option disabled selected>No Dentist/s yet</option>
-              )}
-          </select>
+          {userRole != "DENTIST" ? (
+            <>
+              <label className="text-sm fw-500 toothline-text">Select Dentist: </label>
+              <select
+                id="dentistId"
+                name="dentistId"
+                onChange={handleDentistChange}
+                value={selectedDentist?.id}
+                className="rounded-md text-sm"
+              >
+                <option value="0">Select Dentist</option>
+                {dentists?.length ? (
+                  dentists.map((dentist) => (
+                    <option key={dentist.id} value={dentist.id}>
+                      {dentist.name}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>No Dentist/s yet</option>
+                )}
+              </select>
+            </>
+          ) : (
+            <>
+              <div className="flex">
+                <label className="text-sm fw-500 toothline-text">Dentist: </label>
+                <p className="mx-2 text-sm">{userName}</p>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="w-1/2 text-sm text-right">
@@ -190,22 +207,24 @@ const DentistSchedulesPage: React.FC = () => {
           onClose={() => setOpenCreate(false)}
           >
             <div>
-              <div className="mb-4">
-                  <label className="block text-sm fw-500 toothline-text">Dentist</label>
-                  <select id="dentistId" name="dentistId" value={scheduleForm.dentistId} onChange={handleScheduleFormChange} className="mt-1 block w-full rounded-md text-sm">
-                      <option value="">Select Dentist</option>
-                      {dentists?.length ? (
-                        dentists.map((dentist) => (
-                        <option key={dentist.id} value={dentist.id}>
-                        {dentist.name}
-                        </option>
-                        ))
-                      ) : (
-                        <option value="" disabled selected>No Dentist/s yet</option>
-                      )}
-                  </select>
-                  <ErrorText field="dentistId" errors={formErrors} />
-              </div>
+              {userRole != 'DENTIST' && (
+                <div className="mb-4">
+                    <label className="block text-sm fw-500 toothline-text">Dentist</label>
+                    <select id="dentistId" name="dentistId" value={scheduleForm.dentistId} onChange={handleScheduleFormChange} className="mt-1 block w-full rounded-md text-sm">
+                        <option value="">Select Dentist</option>
+                        {dentists?.length ? (
+                          dentists.map((dentist) => (
+                          <option key={dentist.id} value={dentist.id}>
+                          {dentist.name}
+                          </option>
+                          ))
+                        ) : (
+                          <option value="" disabled selected>No Dentist/s yet</option>
+                        )}
+                    </select>
+                    <ErrorText field="dentistId" errors={formErrors} />
+                </div>
+              )}
               <div className="mb-4 grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-sm fw-500 toothline-text">Day</label>
@@ -338,7 +357,11 @@ const DentistSchedulesPage: React.FC = () => {
       </div>
       {/* Table */}
       <div className="w-full flex flex-wrap px-10 py-5 bg-white rounded-lg shadow-md my-5">
-        <h2 className="fw-600 text-xl mb-5">Schedule for { selectedDentist?.name }</h2>
+        {userRole != 'DENTIST' ? (
+          <><h2 className="fw-600 text-xl mb-5">Schedule for { selectedDentist?.name }</h2></>
+        ) : (
+          <><h2 className="fw-600 text-xl mb-5">Your Schedule</h2></>
+        )}
         
         {/* Days */}
         <div className="w-full grid grid-cols-3 gap-3">
