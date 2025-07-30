@@ -4,6 +4,7 @@ import Index from './pages/Web/Index';
 import LoginPage from './pages/Admin/LoginPage';
 import AdminLayout from './components/layout/AdminLayout';
 import DashboardPage from './pages/Admin/DashboardPage';
+import AuditLogPage from './pages/Admin/AuditLogPage';
 import AppointmentsPage from './pages/Admin/AppointmentsPage';
 import DentistSchedulesPage from './pages/Admin/DentistSchedulesPage';
 import ServicesPage from './pages/Admin/ServicesPage';
@@ -25,6 +26,7 @@ const App: React.FC = () => {
           <Route path="patients" element={<ProtectedRoute><PatientsPage /></ProtectedRoute>} />
           <Route path="security" element={<ProtectedRoute requiredRole="ADMIN"><SecurityPage /></ProtectedRoute>} />
           <Route path="profile" element={<ProtectedRoute><UserProfilePage /></ProtectedRoute>} />
+          <Route path="audit-logs" element={<ProtectedRoute requiredRole="ADMIN"><AuditLogPage /></ProtectedRoute>} />
         </Route>
       </Routes>
     </Router>

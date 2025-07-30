@@ -1,5 +1,5 @@
 import axios from '../lib/axios';
-import { toastError, toastInfo, toastSuccess  } from '../utils/toastMessage';
+import { toastError, toastSuccess  } from '../utils/toastMessage';
 
 export interface UpdateUserForm {
   role: string;
@@ -8,9 +8,26 @@ export interface UpdateUserForm {
 }
 
 export interface AuditLogData {
+  id: string;
+  action: string;
   details: string;
   performedBy: string;
   timestamp: string;
+}
+
+export const logCategories: string[] = [
+  'APPOINTMENT',
+  'SCHEDULE',
+  'SERVICE',
+  'PATIENT',
+  'SECURITY',
+  'PROFILE',
+];  
+
+export interface AuditLogFilters {
+  performedBy: string;
+  date: string;
+  category: string;
 }
 
 export const updateUserAsAdmin = async (userId: number, updateUserForm: UpdateUserForm) => {
@@ -23,7 +40,12 @@ export const updateUserAsAdmin = async (userId: number, updateUserForm: UpdateUs
   }
 };
 
-export const fetchLogs = async () => {
-  const res = await axios.get('/admin/security/audit-logs');
+export const fetchLatestLogs = async () => {
+  const res = await axios.get('/admin/security/audit-logs/latest');
+  return res.data;
+}
+
+export const fetchLogs = async (filters: AuditLogFilters) => {
+  const res = await axios.post('/admin/security/audit-logs', filters);
   return res.data;
 }

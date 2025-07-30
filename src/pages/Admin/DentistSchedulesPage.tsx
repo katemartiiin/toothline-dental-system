@@ -5,7 +5,7 @@ import ErrorText from '../../components/ErrorText';
 import { Pencil, Trash } from 'lucide-react';
 import { fetchSchedules, fetchMySchedules, createSchedule, createMySchedule, updateSchedule, deleteSchedule,
   type DentistSchedule, type ScheduleForm, type UpdateScheduleForm, type ScheduleDay, scheduleDays } from '../../api/schedules';
-import {fetchUsersByRole, type UsersFilters } from '../../api/users';
+import { fetchUsersByRole, type UsersFilters } from '../../api/users';
 import { type FieldError } from '../../utils/toastMessage';
 interface Dentist {
   id: number;

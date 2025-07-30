@@ -16,6 +16,7 @@ const AdminLayout: React.FC = () => {
     '/admin/patients': 'Patient Management',
     '/admin/security': 'Security Settings',
     '/admin/profile': 'My Profile',
+    '/admin/audit-logs' : 'Audit Logs'
   };
 
   const title = pageTitles[location.pathname] || 'Toothline Dental Clinic - Admin System';

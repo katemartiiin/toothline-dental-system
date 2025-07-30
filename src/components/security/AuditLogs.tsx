@@ -1,18 +1,24 @@
 import { useEffect, useState } from 'react';
-import { fetchLogs, type AuditLogData } from '../../api/security';
+import { useNavigate } from 'react-router-dom';
+import { fetchLatestLogs, type AuditLogData } from '../../api/security';
 const AuditLogs: React.FC = () => {
   const [logs, setLogs] = useState<AuditLogData[]>([]);
+
+  const navigate = useNavigate();
+
+  const goToAuditLogs = () => {
+    navigate('/admin/audit-logs');
+  };
+
   
   const getLogs = async () => {
     try {
-      const res = await fetchLogs();
+      const res = await fetchLatestLogs();
       setLogs(res);
     } catch (error) {
       console.error('Failed to fetch logs', error);
     }
   };
-
-  const topFiveLogs = logs.slice(0, 5);
 
   useEffect(() => {
     getLogs()
@@ -24,7 +30,7 @@ const AuditLogs: React.FC = () => {
             
             <div className="w-full text-sm space-y-3 my-5">
               {logs?.length ? (
-                logs.slice(0, 5).map((log, index) => (
+                logs.map((log, index) => (
                 <p key={index} className="text-xs">[{log.timestamp}] {log.details} - {log.performedBy}</p>
                 ))
               ) : (
@@ -33,8 +39,8 @@ const AuditLogs: React.FC = () => {
             </div>
         </div>
         <div className="w-full flex items-end justify-end">
-            <button type="button"className="px-4 py-2 text-sm toothline-text-accent fw-600">
-            View Full Audit Log
+            <button type="button" onClick={goToAuditLogs} className="px-4 py-2 text-sm toothline-text-accent fw-600">
+              View Full Audit Log
             </button>
         </div>
     </div>
