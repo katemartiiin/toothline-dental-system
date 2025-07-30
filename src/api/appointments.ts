@@ -17,6 +17,8 @@ export interface FormData {
   serviceId: string;
   dentistId: string;
   notes: string;
+  treatmentPlan: string;
+  paidAmount: string | number;
 }
 export interface UpdateFormData {
   id: string;
@@ -26,6 +28,8 @@ export interface UpdateFormData {
   dentistId: string;
   status: string;
   notes: string;
+  treatmentPlan: string;
+  paidAmount: string | number;
 }
 
 

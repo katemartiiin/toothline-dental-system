@@ -19,6 +19,8 @@ interface Appointment {
   dentistId: number;
   dentistName: string;
   status: string;
+  treatmentPlan: string;
+  paidAmount: string | number;
 }
 interface Service {
   id: number;
@@ -56,7 +58,9 @@ const AppointmentsPage: React.FC = () => {
       appointmentTime: '',
       serviceId: '',
       dentistId: '',
-      notes: ''
+      notes: '',
+      treatmentPlan: '',
+      paidAmount: ''
   });
 
   const defaultSelectedAppointment = {
@@ -69,7 +73,9 @@ const AppointmentsPage: React.FC = () => {
     serviceId: '',
     dentistId: '',
     status: '',
-    notes: ''
+    notes: '',
+    treatmentPlan: '',
+    paidAmount: ''
   }
 
   const selectedAppointment = useRef(defaultSelectedAppointment);
@@ -81,7 +87,9 @@ const AppointmentsPage: React.FC = () => {
     serviceId: selectedAppointment.current.serviceId,
     dentistId: selectedAppointment.current.dentistId,
     status: selectedAppointment.current.status,
-    notes: selectedAppointment.current.notes
+    notes: selectedAppointment.current.notes,
+    treatmentPlan: selectedAppointment.current.treatmentPlan,
+    paidAmount: selectedAppointment.current.paidAmount,
   });
 
   const [loading, setLoading] = useState(false);
@@ -105,7 +113,9 @@ const AppointmentsPage: React.FC = () => {
     appointmentTime: '',
     serviceId: '',
     dentistId: '',
-    notes: ''
+    notes: '',
+    treatmentPlan: '',
+    paidAmount: ''
   };
 
   const defaultUpdateFormData: UpdateFormData = {
@@ -115,7 +125,9 @@ const AppointmentsPage: React.FC = () => {
     serviceId: '',
     dentistId: '',
     status: '',
-    notes: ''
+    notes: '',
+    treatmentPlan: '',
+    paidAmount: ''
   }
 
   const statusRef = useRef<string>('PENDING');
@@ -130,7 +142,9 @@ const AppointmentsPage: React.FC = () => {
       serviceId: appt.serviceId,
       dentistId: appt.dentistId,
       status: appt.status,
-      notes: appt.notes
+      notes: appt.notes,
+      treatmentPlan: appt.treatmentPlan,
+      paidAmount: appt.paidAmount
     })
     setOpenEdit(isOpen);
   };
@@ -353,7 +367,11 @@ const AppointmentsPage: React.FC = () => {
               </div>
               <div className="mb-4">
                 <label className="block text-sm fw-500 toothline-text">Treatment Plan</label>
-                <textarea name="treatmentPlan" className="mt-1 block w-full rounded-md text-sm" placeholder="Type here..." />
+                <textarea name="treatmentPlan" value={formData.treatmentPlan} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" placeholder="Type here..." />
+              </div>
+              <div className="mb-4">
+                  <label className="block text-sm fw-500 toothline-text">Paid Amount</label>
+                  <input type="number" id="paidAmount" name="paidAmount" value={formData.paidAmount} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" />
               </div>
 
               <div className="flex justify-end space-x-2">
@@ -459,7 +477,11 @@ const AppointmentsPage: React.FC = () => {
               </div>
               <div className="mb-4">
                 <label className="block text-sm fw-500 toothline-text">Treatment Plan</label>
-                <textarea name="treatmentPlan" className="mt-1 block w-full rounded-md text-sm" placeholder="Type here..." />
+                <textarea name="treatmentPlan" value={updateFormData.treatmentPlan} onChange={handleUpdateFormChange} className="mt-1 block w-full rounded-md text-sm" placeholder="Type here..." />
+              </div>
+              <div className="mb-4">
+                  <label className="block text-sm fw-500 toothline-text">Paid Amount</label>
+                  <input type="number" id="paidAmount" name="paidAmount" value={updateFormData.paidAmount} onChange={handleUpdateFormChange} className="mt-1 block w-full rounded-md text-sm" />
               </div>
 
               <div className="flex justify-end space-x-2">
