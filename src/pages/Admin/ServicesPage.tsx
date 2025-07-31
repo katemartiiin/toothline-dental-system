@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
 import Modal from '../../components/Modal';
+import ErrorText from '../../components/ErrorText';
 import { fetchServices, createService, updateService, deleteService, 
   type ServiceForm, type ServiceFilters } from '../../api/services';
+import { type FieldError } from '../../utils/toastMessage';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { type PageOptions } from '../../utils/paginate';
 interface Service {
   id: number;
   name: string;
@@ -11,6 +15,7 @@ interface Service {
 }
 const ServicesPage: React.FC = () => {
   const [services, setServices] = useState<Service[]>([]);
+  const [formErrors, setFormErrors] = useState<FieldError[]>([]);
 
   const defaultServiceForm = {
     name: '',
@@ -22,7 +27,19 @@ const ServicesPage: React.FC = () => {
   const [serviceForm, setServiceForm] = useState<ServiceForm>(defaultServiceForm);
 
   const [serviceFilters, setServiceFilters] = useState<ServiceFilters>({
-    name: ""
+    name: "",
+    page: 0,
+    size: 10
+  });
+
+  const [pageOptions, setPageOptions] = useState<PageOptions>({
+    first: true,
+    last: false,
+    number: 0,
+    numberOfElements: 0,
+    size: 10,
+    totalElements: 0,
+    totalPages: 0
   });
 
   const [selectedService, setSelectedService] = useState<Service>({
@@ -62,47 +79,70 @@ const ServicesPage: React.FC = () => {
   };
 
   const handleSelectedService = (service: Service, type: string) => {
+    setFormErrors([]);
     setSelectedService(service);
     
     type == 'update' ? setOpenEdit(true) : setOpenDelete(true);
   }
 
+  const handleChangePage = (type: string) => {
+    const newPage = type == 'next' ? serviceFilters.page + 1 : serviceFilters.page - 1;
+
+    setServiceFilters({
+      name: serviceFilters.name,
+      page: newPage,
+      size: serviceFilters.size
+    })
+  }
+
   const getServices = async () => {
     try {
-      const dataServices = await fetchServices(serviceFilters);
-      setServices(dataServices);
+      const res = await fetchServices(serviceFilters);
+      setServices(res.content);
+      setPageOptions({
+        first: res.first,
+        last: res.last,
+        number: res.number,
+        numberOfElements: res.numberOfElements,
+        size: res.size,
+        totalElements: res.totalElements,
+        totalPages: res.totalPages
+      });
     } catch (error) {
       console.error('Failed to fetch services', error);
     }
   };
 
   const createNewService = async () => {
-    try {
-      const createData = await createService(serviceForm);
+    setFormErrors([]);
+    const createResponse = await createService(serviceForm);
+    
+    if (createResponse.status == 400) {
+      setFormErrors(createResponse.errors);
+    } else {
       setServiceForm(defaultServiceForm);
       getServices();
-    } catch (error) {
-      console.log('Failed to create service', error);
     }
   };
 
   const editService = async () => {
-    try {
-      const updateData = await updateService(selectedService.id, selectedService);
+    setFormErrors([]);
+    const updateResponse = await updateService(selectedService.id, selectedService);
+    
+    if (updateResponse.status == 400) {
+      setFormErrors(updateResponse.errors);
+    } else {
       getServices();
       setOpenEdit(false);
-    } catch (error) {
-      console.log('Failed to update service', error);
     }
   };
 
   const deleteServ = async () => {
-    try {
-      const deleteData = await deleteService(selectedService.id);
+    const deleteResponse = await deleteService(selectedService.id);
+    
+    if (deleteResponse?.status == 200) {
       getServices();
       setOpenDelete(false);
-    } catch (error) {
-      console.log('Failed to delete service', error);
     }
   };
 
@@ -135,6 +175,7 @@ const ServicesPage: React.FC = () => {
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Service Name</label>
                   <input type="text" id="serviceName" name="name" value={serviceForm.name} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
+                  <ErrorText field="name" errors={formErrors} />
               </div>
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Description</label>
@@ -144,10 +185,12 @@ const ServicesPage: React.FC = () => {
                 <div>
                   <label className="block text-sm fw-500 toothline-text">Price ($)</label>
                   <input type="number" id="price" name="price" value={serviceForm.price} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" step="0.01" min="0" placeholder="e.g., 250.00" />
+                  <ErrorText field="price" errors={formErrors} />
                 </div>
                 <div>
-                    <label className="block text-sm fw-500 toothline-text">Duration</label>
-                    <input type="number" id="duration" name="durationMinutes" value={serviceForm.durationMinutes} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" min="1" placeholder="e.g., 60" />
+                  <label className="block text-sm fw-500 toothline-text">Duration</label>
+                  <input type="number" id="duration" name="durationMinutes" value={serviceForm.durationMinutes} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" min="1" placeholder="e.g., 60" />
+                  <ErrorText field="durationMinutes" errors={formErrors} />
                 </div>
               </div>
 
@@ -180,6 +223,7 @@ const ServicesPage: React.FC = () => {
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Service Name</label>
                   <input type="text" id="serviceName" name="name" value={selectedService.name} onChange={handleFormUpdate} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
+                  <ErrorText field="name" errors={formErrors} />
               </div>
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Description</label>
@@ -189,10 +233,12 @@ const ServicesPage: React.FC = () => {
                 <div>
                   <label className="block text-sm fw-500 toothline-text">Price ($)</label>
                   <input type="number" id="servicePrice" name="price" value={selectedService.price} onChange={handleFormUpdate} className="mt-1 block w-full rounded-md text-sm" step="0.01" min="0" placeholder="e.g., 250.00" />
+                  <ErrorText field="price" errors={formErrors} />
                 </div>
                 <div>
                     <label className="block text-sm fw-500 toothline-text">Duration</label>
                     <input type="number" id="serviceDuration" name="durationMinutes" value={selectedService.durationMinutes} onChange={handleFormUpdate} className="mt-1 block w-full rounded-md text-sm" min="1" placeholder="e.g., 60" />
+                    <ErrorText field="durationMinutes" errors={formErrors} />
                 </div>
               </div>
 
@@ -270,6 +316,32 @@ const ServicesPage: React.FC = () => {
         ) : (
           <p className="w-full bg-gray-50 my-1 p-1 text-gray-500 italic text-center">No services added yet.</p>
         )}
+
+        {/* Pagination */}
+        <div className="w-full flex justify-end toothline-bg-light border border-gray-200 p-3 my-1 text-sm space-x-7">
+          <span className="my-auto">{ pageOptions.totalElements } total entries</span>
+          <div>
+            <span className="my-auto mx-2">Show</span>
+            <select id="size" name="size" value={serviceFilters.size} onChange={handleFilterChange} className="rounded-md text-sm">
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+            </select>
+          </div>
+          <button type="button" onClick={() => handleChangePage('prev')} disabled={pageOptions.first} className={`flex p-1 ${
+                pageOptions.first ? 'text-gray-400' : 'hover:toothline-text-primary'
+              }`}>
+            <ArrowLeft size={25} className="my-auto" />
+            <span className="mx-1 my-auto">Previous</span>
+          </button>
+          <button type="button" onClick={() => handleChangePage('next')} disabled={pageOptions.last} className={`flex p-1 ${
+                pageOptions.last ? 'text-gray-400' : 'hover:toothline-text-primary'
+              }`}>
+            <span className="mx-1 my-auto">Next</span>
+            <ArrowRight size={25} className="my-auto" />
+          </button>
+        </div>
 
       </div>
     </div>

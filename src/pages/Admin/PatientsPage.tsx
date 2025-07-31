@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
 import { fetchPatients, createPatient, updatePatient, archivePatient, 
   type PatientForm, type PatientFilters } from '../../api/patients';
+import { type FieldError } from '../../utils/toastMessage';
 import Modal from '../../components/Modal';
+import ErrorText from '../../components/ErrorText';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { type PageOptions } from '../../utils/paginate';
 interface Patient {
   id: number;
   name: string;
@@ -10,6 +14,7 @@ interface Patient {
 }
 const PatientsPage: React.FC = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
+  const [formErrors, setFormErrors] = useState<FieldError[]>([]);
   
   const defaultPatientForm = {
     name: '',
@@ -20,7 +25,19 @@ const PatientsPage: React.FC = () => {
   const [patientForm, setPatientForm] = useState<PatientForm>(defaultPatientForm);
 
   const [patientFilters, setPatientFilters] = useState<PatientFilters>({
-      name: ""
+      name: "",
+      page: 0,
+      size: 10
+  });
+
+  const [pageOptions, setPageOptions] = useState<PageOptions>({
+    first: true,
+    last: false,
+    number: 0,
+    numberOfElements: 0,
+    size: 10,
+    totalElements: 0,
+    totalPages: 0
   });
 
   const [selectedPatient, setSelectedPatient] = useState<Patient>({
@@ -34,7 +51,7 @@ const PatientsPage: React.FC = () => {
   const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setPatientFilters((prev) => ({
       ...prev,
@@ -59,47 +76,68 @@ const PatientsPage: React.FC = () => {
   };
 
   const handleSelectedPatient = (patient: Patient, type: string) => {
+      setFormErrors([]);
       setSelectedPatient(patient);
       
       type == 'update' ? setOpenEdit(true) : setOpenDelete(true);
   };
+
+  const handleChangePage = (type: string) => {
+    const newPage = type == 'next' ? patientFilters.page + 1 : patientFilters.page - 1;
+
+    setPatientFilters({
+      name: patientFilters.name,
+      page: newPage,
+      size: patientFilters.size
+    })
+  }
   
   const getPatients = async () => {
     try {
-      const dataPatients = await fetchPatients(patientFilters);
-      setPatients(dataPatients);
+      const res = await fetchPatients(patientFilters);
+      setPatients(res.content);
+      setPageOptions({
+        first: res.first,
+        last: res.last,
+        number: res.number,
+        numberOfElements: res.numberOfElements,
+        size: res.size,
+        totalElements: res.totalElements,
+        totalPages: res.totalPages
+      });
     } catch (error) {
       console.error('Failed to fetch patients', error);
     }
   };
 
   const createNewPatient = async () => {
-      try {
-        const createData = await createPatient(patientForm);
+      const createResponse = await createPatient(patientForm);
+      
+      if (createResponse.status == 400) {
+        setFormErrors(createResponse.errors);
+      } else {
         setPatientForm(defaultPatientForm);
         getPatients();
-      } catch (error) {
-        console.log('Failed to create patient', error);
       }
   };
   
   const editPatient = async () => {
-    try {
-      const updateData = await updatePatient(selectedPatient.id, selectedPatient);
+    const updateResponse = await updatePatient(selectedPatient.id, selectedPatient);
+    
+    if (updateResponse.status == 400) {
+      setFormErrors(updateResponse.errors);
+    } else {
       getPatients();
       setOpenEdit(false);
-    } catch (error) {
-      console.log('Failed to update patient', error);
     }
   };
   
   const archivePt = async (isArchive: boolean) => {
-    try {
-      const archiveData = await archivePatient(selectedPatient.id, isArchive);
+    const archiveResponse = await archivePatient(selectedPatient.id, isArchive);
+    
+    if (archiveResponse?.status == 200) {
       getPatients();
       setOpenDelete(false);
-    } catch (error) {
-      console.log('Failed to archive patient', error);
     }
   };
 
@@ -133,14 +171,17 @@ const PatientsPage: React.FC = () => {
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Patient Name</label>
                   <input type="text" id="name" name="name" value={patientForm.name} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
+                  <ErrorText field="name" errors={formErrors} />
               </div>
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Email</label>
                   <input type="email" id="email" name="email" value={patientForm.email} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., janedoe@example.com" />
+                  <ErrorText field="email" errors={formErrors} />
               </div>
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Phone Number</label>
                   <input type="text" id="phoneNumber" name="phoneNumber" value={patientForm.phoneNumber} onChange={handleFormChange} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., 09123456789" />
+                  <ErrorText field="phoneNumber" errors={formErrors} />
               </div>
 
               <div className="flex justify-end space-x-2">
@@ -172,14 +213,17 @@ const PatientsPage: React.FC = () => {
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Patient Name</label>
                   <input type="text" id="patientName" name="name" value={selectedPatient.name} onChange={handleFormUpdate} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., Jane Doe" />
+                  <ErrorText field="name" errors={formErrors} />
               </div>
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Email</label>
                   <input type="email" id="patientEmail" name="email" value={selectedPatient.email} onChange={handleFormUpdate} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., janedoe@example.com" />
+                  <ErrorText field="email" errors={formErrors} />
               </div>
               <div className="mb-4">
                   <label className="block text-sm fw-500 toothline-text">Phone Number</label>
                   <input type="text" id="patientPhoneNumber" name="phoneNumber" value={selectedPatient.phoneNumber} onChange={handleFormUpdate} className="mt-1 block w-full rounded-md text-sm" placeholder="e.g., 09123456789" />
+                  <ErrorText field="phoneNumber" errors={formErrors} />
               </div>
               
               <div className="flex justify-end space-x-2">
@@ -254,6 +298,32 @@ const PatientsPage: React.FC = () => {
         ) : (
           <p className="w-full bg-gray-50 my-1 p-1 text-gray-500 italic text-center">No patients added yet.</p>
         )}
+
+        {/* Pagination */}
+        <div className="w-full flex justify-end toothline-bg-light border border-gray-200 p-3 my-1 text-sm space-x-7">
+          <span className="my-auto">{ pageOptions.totalElements } total entries</span>
+          <div>
+            <span className="my-auto mx-2">Show</span>
+            <select id="size" name="size" value={patientFilters.size} onChange={handleFilterChange} className="rounded-md text-sm">
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+            </select>
+          </div>
+          <button type="button" onClick={() => handleChangePage('prev')} disabled={pageOptions.first} className={`flex p-1 ${
+                pageOptions.first ? 'text-gray-400' : 'hover:toothline-text-primary'
+              }`}>
+            <ArrowLeft size={25} className="my-auto" />
+            <span className="mx-1 my-auto">Previous</span>
+          </button>
+          <button type="button" onClick={() => handleChangePage('next')} disabled={pageOptions.last} className={`flex p-1 ${
+                pageOptions.last ? 'text-gray-400' : 'hover:toothline-text-primary'
+              }`}>
+            <span className="mx-1 my-auto">Next</span>
+            <ArrowRight size={25} className="my-auto" />
+          </button>
+        </div>
 
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { Outlet, useLocation  } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
 import { AuthProvider } from '../../context/AuthContext';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -15,6 +16,7 @@ const AdminLayout: React.FC = () => {
     '/admin/patients': 'Patient Management',
     '/admin/security': 'Security Settings',
     '/admin/profile': 'My Profile',
+    '/admin/audit-logs' : 'Audit Logs'
   };
 
   const title = pageTitles[location.pathname] || 'Toothline Dental Clinic - Admin System';
@@ -32,6 +34,8 @@ const AdminLayout: React.FC = () => {
         <main className="flex-1 p-4 bg-gray-50 font-opensans">
           <Outlet />
         </main>
+
+        <ToastContainer />
 
         <Footer />
       </div>
