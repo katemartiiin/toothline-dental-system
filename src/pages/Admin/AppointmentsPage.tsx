@@ -3,9 +3,11 @@ import Modal from '../../components/Modal';
 import ErrorText from '../../components/ErrorText';
 import { fetchAppointments, createAppointment, updateAppointment, updateStatus, toggleArchive, 
   type AppointmentFilters, type FormData, type UpdateFormData } from '../../api/appointments';
-import { fetchServices, type ServiceFilters } from '../../api/services';
+import { fetchPublicServices } from '../../api/services';
 import {fetchUsersByRole, type UsersFilters } from '../../api/users';
 import { type FieldError } from '../../utils/toastMessage';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { type PageOptions } from '../../utils/paginate';
 interface Appointment {
   id: number;
   name: string;
@@ -44,10 +46,6 @@ const AppointmentsPage: React.FC = () => {
 
   const [userFilters, setUserFilters] = useState<UsersFilters>({
     role: ""
-  });
-
-  const [serviceFilters, setServiceFilters] = useState<ServiceFilters>({
-    name: ""
   });
 
   const [formData, setFormData] = useState<FormData>({
@@ -100,6 +98,16 @@ const AppointmentsPage: React.FC = () => {
     appointmentDate: "",
     page: 0,
     size: 10
+  });
+
+  const [pageOptions, setPageOptions] = useState<PageOptions>({
+    first: true,
+    last: false,
+    number: 0,
+    numberOfElements: 0,
+    size: 10,
+    totalElements: 0,
+    totalPages: 0
   });
 
   const [openCreate, setOpenCreate] = useState(false);
@@ -173,11 +181,32 @@ const AppointmentsPage: React.FC = () => {
     }));
   };
 
+  const handleChangePage = (type: string) => {
+    const newPage = type == 'next' ? filters.page + 1 : filters.page - 1;
+
+    setFilters({
+      serviceId: filters.serviceId,
+      patientName: filters.patientName,
+      appointmentDate: filters.appointmentDate,
+      page: newPage,
+      size: filters.size
+    })
+  }
+
   const getAppointments = async () => {
     try {
       setLoading(true);
-      const data = await fetchAppointments(filters);
-      setAppointments(data);
+      const res = await fetchAppointments(filters);
+      setAppointments(res.content);
+      setPageOptions({
+        first: res.first,
+        last: res.last,
+        number: res.number,
+        numberOfElements: res.numberOfElements,
+        size: res.size,
+        totalElements: res.totalElements,
+        totalPages: res.totalPages
+      });
     } catch (error) {
       console.error('Failed to fetch appointments', error);
     } finally {
@@ -187,7 +216,7 @@ const AppointmentsPage: React.FC = () => {
 
   const getServices = async () => {
     try {
-      const dataServices = await fetchServices(serviceFilters);
+      const dataServices = await fetchPublicServices();
       setServices(dataServices);
     } catch (error) {
       console.error('Failed to fetch services', error);
@@ -197,8 +226,8 @@ const AppointmentsPage: React.FC = () => {
   const getDentists = async () => {
     try {
       userFilters.role = "DENTIST";
-      const dataDentists = await fetchUsersByRole(userFilters);
-      setDentists(dataDentists);
+      const dataDentists = await fetchUsersByRole(userFilters, null);
+      setDentists(dataDentists.content);
     } catch (error) {
       console.error('Failed to fetch dentists', error);
     }
@@ -551,6 +580,32 @@ const AppointmentsPage: React.FC = () => {
         ) : (
           <p className="w-full bg-gray-50 my-1 p-1 text-gray-500 italic text-center">No appointments yet.</p>
         )}
+
+        {/* Pagination */}
+        <div className="w-full flex justify-end toothline-bg-light border border-gray-200 p-3 my-1 text-sm space-x-7">
+          <span className="my-auto">{ pageOptions.totalElements } total entries</span>
+          <div>
+            <span className="my-auto mx-2">Show</span>
+            <select id="size" name="size" value={filters.size} onChange={handleFilterChange} className="rounded-md text-sm">
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+            </select>
+          </div>
+          <button type="button" onClick={() => handleChangePage('prev')} disabled={pageOptions.first} className={`flex p-1 ${
+                pageOptions.first ? 'text-gray-400' : 'hover:toothline-text-primary'
+              }`}>
+            <ArrowLeft size={25} className="my-auto" />
+            <span className="mx-1 my-auto">Previous</span>
+          </button>
+          <button type="button" onClick={() => handleChangePage('next')} disabled={pageOptions.last} className={`flex p-1 ${
+                pageOptions.last ? 'text-gray-400' : 'hover:toothline-text-primary'
+              }`}>
+            <span className="mx-1 my-auto">Next</span>
+            <ArrowRight size={25} className="my-auto" />
+          </button>
+        </div>
         
       </div>
     </div>

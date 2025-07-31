@@ -6,6 +6,8 @@ import AuditLogs from '../../components/security/AuditLogs';
 import { fetchUsersByRole, createUser, type UserForm, type User, type UsersFilters} from '../../api/users';
 import { updateUserAsAdmin, type UpdateUserForm } from '../../api/security';
 import { type FieldError } from '../../utils/toastMessage';
+import { type PageOptions, type PaginateDefault } from '../../utils/paginate';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 
 const SecurityPage: React.FC = () => {
   const [openCreate, setOpenCreate] = useState(false);
@@ -15,8 +17,23 @@ const SecurityPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [formErrors, setFormErrors] = useState<FieldError[]>([]);
   const [userFilters, setUserFilters] = useState<UsersFilters>({
-    role: ""
+    role: "",
   });
+
+  const [paginateDefault, setPaginateDefault] = useState<PaginateDefault>({
+    page: 0,
+    size: 10
+  });
+
+  const [pageOptions, setPageOptions] = useState<PageOptions>({
+      first: true,
+      last: false,
+      number: 0,
+      numberOfElements: 0,
+      size: 10,
+      totalElements: 0,
+      totalPages: 0
+    });
 
   const defaultUserForm = {
     name: '',
@@ -51,10 +68,27 @@ const SecurityPage: React.FC = () => {
     }));
   };
 
+  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement >) => {
+    const { name, value } = e.target;
+    setPaginateDefault((prev) => ({
+    ...prev,
+    [name]: value,
+    }));
+  };
+
   const getUsers = async() => {
     try {
-      const res = await fetchUsersByRole(userFilters);
-      setUsers(res);
+      const res = await fetchUsersByRole(userFilters, paginateDefault);
+      setUsers(res.content);
+      setPageOptions({
+        first: res.first,
+        last: res.last,
+        number: res.number,
+        numberOfElements: res.numberOfElements,
+        size: res.size,
+        totalElements: res.totalElements,
+        totalPages: res.totalPages
+      });
     } catch (error) {
       console.log('Failed to fetch users', error)
     }
@@ -74,6 +108,15 @@ const SecurityPage: React.FC = () => {
       setOpenLock(true);
     }
   };
+
+  const handleChangePage = (type: string) => {
+    const newPage = type == 'next' ? paginateDefault.page + 1 : paginateDefault.page - 1;
+
+    setPaginateDefault({
+      page: newPage,
+      size: paginateDefault.size
+    })
+  }
 
   const createNewUser = async () => {
     const createResponse = await createUser(userForm);
@@ -99,7 +142,7 @@ const SecurityPage: React.FC = () => {
 
   useEffect(() => {
     getUsers();
-  }, [userFilters]);
+  }, [userFilters, paginateDefault]);
   return (
     <div className="w-full flex flex-wrap px-16 py-2">
 
@@ -148,6 +191,32 @@ const SecurityPage: React.FC = () => {
         ) : (
           <p className="w-full bg-gray-50 my-1 p-1 text-gray-500 italic text-center">No users added yet.</p>
         )}
+
+        {/* Pagination */}
+        <div className="w-full flex justify-end toothline-bg-light border border-gray-200 p-3 my-1 text-sm space-x-7">
+          <span className="my-auto">{ pageOptions.totalElements } total entries</span>
+          <div>
+            <span className="my-auto mx-2">Show</span>
+            <select id="size" name="size" value={paginateDefault.size} onChange={handleFilterChange} className="rounded-md text-sm">
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+            </select>
+          </div>
+          <button type="button" onClick={() => handleChangePage('prev')} disabled={pageOptions.first} className={`flex p-1 ${
+                pageOptions.first ? 'text-gray-400' : 'hover:toothline-text-primary'
+              }`}>
+            <ArrowLeft size={25} className="my-auto" />
+            <span className="mx-1 my-auto">Previous</span>
+          </button>
+          <button type="button" onClick={() => handleChangePage('next')} disabled={pageOptions.last} className={`flex p-1 ${
+                pageOptions.last ? 'text-gray-400' : 'hover:toothline-text-primary'
+              }`}>
+            <span className="mx-1 my-auto">Next</span>
+            <ArrowRight size={25} className="my-auto" />
+          </button>
+        </div>
 
         {/* Create User */}
           <Modal

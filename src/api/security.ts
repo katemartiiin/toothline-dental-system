@@ -28,6 +28,8 @@ export interface AuditLogFilters {
   performedBy: string;
   date: string;
   category: string;
+  page: number;
+  size: number;
 }
 
 export const updateUserAsAdmin = async (userId: number, updateUserForm: UpdateUserForm) => {

@@ -3,6 +3,8 @@ import { toastError, toastSuccess } from '../utils/toastMessage';
 
 export interface ServiceFilters {
   name?: string;
+  page: number;
+  size: number;
 };
 export interface ServiceForm {
   name: string;
@@ -11,9 +13,14 @@ export interface ServiceForm {
   price: number;
 }
 
+export const fetchPublicServices = async () => {
+  const res = await axios.get('/services');
+  return res.data.data;
+}
+
 export const fetchServices = async (filters: ServiceFilters) => {
   const res = await axios.post('/admin/services/fetch', filters);
-  return res.data.data;
+  return res.data;
 };
 
 export const createService = async (serviceForm: ServiceForm) => {

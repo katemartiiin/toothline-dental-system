@@ -1,4 +1,5 @@
 import axios from '../lib/axios';
+import { type PaginateDefault } from '../utils/paginate';
 import { toastError, toastSuccess  } from '../utils/toastMessage';
 
 export interface UsersFilters {
@@ -26,9 +27,12 @@ export interface ProfileForm {
   confirmPassword: string | any;
 }
 
-export const fetchUsersByRole = async (filters: UsersFilters) => {
+export const fetchUsersByRole = async (filters: UsersFilters, paginate: PaginateDefault | null) => {
   const res = await axios.get('/admin/users/role', {
-    params: filters
+    params: {
+      ...filters,
+      ...(paginate || {})
+    }
   })
   return res.data;
 };

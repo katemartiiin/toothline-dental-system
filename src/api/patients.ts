@@ -3,6 +3,8 @@ import { toastError, toastSuccess } from '../utils/toastMessage';
 
 export interface PatientFilters {
   name?: string;
+  page: number;
+  size: number;
 };
 
 export interface PatientForm {
@@ -13,7 +15,7 @@ export interface PatientForm {
 
 export const fetchPatients = async (filters: PatientFilters) => {
   const res = await axios.post('/admin/patients/fetch-all', filters);
-  return res.data.data;
+  return res.data;
 };
 
 export const createPatient = async (patientForm: PatientForm) => {
