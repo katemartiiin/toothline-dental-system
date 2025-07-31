@@ -509,8 +509,9 @@ const AppointmentsPage: React.FC = () => {
         <h2 className="fw-600 text-xl mb-5">All Appointments</h2>
 
         {/* Table Headers */}
-        <div className="w-full grid grid-cols-6 gap-2 px-3 py-2 toothline-bg-light border-b border-gray-200 text-xs toothline-text">
+        <div className="w-full grid grid-cols-7 gap-2 px-3 py-2 toothline-bg-light border-b border-gray-200 text-xs toothline-text">
           <p>PATIENT</p>
+          <p>DATE</p>
           <p>TIME</p>
           <p>SERVICE</p>
           <p>DENTIST</p>
@@ -521,8 +522,9 @@ const AppointmentsPage: React.FC = () => {
         {/* Table Rows */}
         {appointments?.length ? (
           appointments.map((appt) => (
-            <div key={appt.id} className="w-full grid grid-cols-6 gap-2 px-3 py-2 toothline-bg-light shadow-sm text-sm my-1">
+            <div key={appt.id} className="w-full grid grid-cols-7 gap-2 px-3 py-2 toothline-bg-light shadow-sm text-sm my-1">
               <p>{appt.name}</p>
+              <p>{appt.appointmentDate}</p>
               <p>{appt.appointmentTime}</p>
               <p>{appt.serviceName}</p>
               <p>{appt.dentistName ?? 'Unassigned'}</p>
