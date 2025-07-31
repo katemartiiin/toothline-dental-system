@@ -104,7 +104,7 @@ const SecurityPage: React.FC = () => {
       setOpenEdit(true);
     } else {
       updateUserForm.role = '';
-      updateUserForm.locked = true;
+      updateUserForm.locked = !user.locked;
       setOpenLock(true);
     }
   };
@@ -184,7 +184,7 @@ const SecurityPage: React.FC = () => {
             <p className="toothline-text-primary">{user.role}</p>
             <div className="space-x-3">
               <button type="button" onClick={() => handleUserUpdate(user, 'edit')} className="toothline-text-accent fw-500">Edit Role</button>
-              <button type="button" onClick={() => handleUserUpdate(user, 'lock')} className="toothline-error fw-500">Lock</button>
+              <button type="button" onClick={() => handleUserUpdate(user, 'lock')} className="toothline-error fw-500">{user.locked ? 'Unlock' : 'Lock'}</button>
             </div>
           </div>
           ))
@@ -310,9 +310,9 @@ const SecurityPage: React.FC = () => {
           {/* Lock User */}
           <Modal
             isOpen={openLock}
-            title="Lock User"
+            title={user?.locked ? 'Unlock User' : 'Lock User'}
             onClose={() => setOpenLock(false)}
-            >Are you sure you want to lock this user?
+            >Are you sure you want to {user?.locked ? 'unlock' : 'lock'} this user?
             <div className="mt-4 flex justify-end space-x-2">
               <button
                 type="button"
@@ -326,7 +326,7 @@ const SecurityPage: React.FC = () => {
                 onClick={() => updateUserData()}
                 className="px-4 py-2 toothline-bg-error text-white rounded hover:bg-red-600"
               >
-                Lock User
+                {user?.locked ? 'Unlock' : 'Lock'} User
               </button>
             </div>
           </Modal>
