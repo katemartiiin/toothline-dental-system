@@ -113,7 +113,7 @@ const DentistSchedulesPage: React.FC = () => {
   const getDentists = async () => {
     try {
       userFilters.role = "DENTIST";
-      const dataDentists = await fetchUsersByRole(userFilters);
+      const dataDentists = await fetchUsersByRole(userFilters, null);
       setDentists(dataDentists);
     } catch (error) {
       console.error('Failed to fetch dentists', error);
