@@ -12,3 +12,10 @@ export interface PaginateDefault {
     page: number;
     size: number
 }
+
+export const updatePageOptions = (
+  setter: React.Dispatch<React.SetStateAction<PageOptions>>,
+  res: PageOptions
+) => {
+  setter({ ...res });
+};

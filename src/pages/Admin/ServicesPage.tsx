@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
 import Modal from '../../components/Modal';
+import { useEffect, useState } from 'react';
 import ErrorText from '../../components/ErrorText';
+import Pagination from '../../components/Pagination';
+import { type FieldError } from '../../utils/toastMessage';
+import { createChangeHandler } from '../../utils/changeHandler';
 import { fetchServices, createService, updateService, deleteService, 
   type ServiceForm, type ServiceFilters } from '../../api/services';
-import { type FieldError } from '../../utils/toastMessage';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { type PageOptions } from '../../utils/paginate';
+import { type PageOptions, updatePageOptions } from '../../utils/paginate';
 interface Service {
   id: number;
   name: string;
@@ -54,29 +55,9 @@ const ServicesPage: React.FC = () => {
   const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setServiceFilters((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement >) => {
-    const { name, value } = e.target;
-    setServiceForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleFormUpdate = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement >) => {
-    const { name, value } = e.target;
-    setSelectedService((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  const handleFilterChange = createChangeHandler(setServiceFilters);
+  const handleFormChange = createChangeHandler(setServiceForm);
+  const handleFormUpdate = createChangeHandler(setSelectedService);
 
   const handleSelectedService = (service: Service, type: string) => {
     setFormErrors([]);
@@ -99,15 +80,7 @@ const ServicesPage: React.FC = () => {
     try {
       const res = await fetchServices(serviceFilters);
       setServices(res.content);
-      setPageOptions({
-        first: res.first,
-        last: res.last,
-        number: res.number,
-        numberOfElements: res.numberOfElements,
-        size: res.size,
-        totalElements: res.totalElements,
-        totalPages: res.totalPages
-      });
+      updatePageOptions(setPageOptions, res);
     } catch (error) {
       console.error('Failed to fetch services', error);
     }
@@ -317,31 +290,12 @@ const ServicesPage: React.FC = () => {
           <p className="w-full bg-gray-50 my-1 p-1 text-gray-500 italic text-center">No services added yet.</p>
         )}
 
-        {/* Pagination */}
-        <div className="w-full flex justify-end toothline-bg-light border border-gray-200 p-3 my-1 text-sm space-x-7">
-          <span className="my-auto">{ pageOptions.totalElements } total entries</span>
-          <div>
-            <span className="my-auto mx-2">Show</span>
-            <select id="size" name="size" value={serviceFilters.size} onChange={handleFilterChange} className="rounded-md text-sm">
-                <option value="5">5</option>
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-            </select>
-          </div>
-          <button type="button" onClick={() => handleChangePage('prev')} disabled={pageOptions.first} className={`flex p-1 ${
-                pageOptions.first ? 'text-gray-400' : 'hover:toothline-text-primary'
-              }`}>
-            <ArrowLeft size={25} className="my-auto" />
-            <span className="mx-1 my-auto">Previous</span>
-          </button>
-          <button type="button" onClick={() => handleChangePage('next')} disabled={pageOptions.last} className={`flex p-1 ${
-                pageOptions.last ? 'text-gray-400' : 'hover:toothline-text-primary'
-              }`}>
-            <span className="mx-1 my-auto">Next</span>
-            <ArrowRight size={25} className="my-auto" />
-          </button>
-        </div>
+        <Pagination
+          pageOptions={pageOptions}
+          filters={serviceFilters}
+          onFilterChange={handleFilterChange}
+          onPageChange={handleChangePage}
+        />
 
       </div>
     </div>

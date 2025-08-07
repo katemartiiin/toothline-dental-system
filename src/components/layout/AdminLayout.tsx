@@ -23,7 +23,6 @@ const AdminLayout: React.FC = () => {
 
   return (
     <div className="flex min-h-screen">
-      {/* Sidebar */}
       <AuthProvider>
         <Sidebar />
       </AuthProvider>

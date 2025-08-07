@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
+import ErrorText from '../../components/ErrorText';
+import { type FieldError } from '../../utils/toastMessage';
 interface ServiceItem {
   id: number;
   name: string;
@@ -30,7 +32,7 @@ function BookingForm({ services, minDate }: BookingFormProps) {
         notes: ''
     });
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-    const [error, setError] = useState<string | null>(null);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     const defaultFormData: FormData = {
         name: '',
@@ -42,6 +44,8 @@ function BookingForm({ services, minDate }: BookingFormProps) {
         notes: ''
     };
 
+    const [formErrors, setFormErrors] = useState<FieldError[]>([]);
+
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
         ) => {
@@ -51,26 +55,28 @@ function BookingForm({ services, minDate }: BookingFormProps) {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setStatus('loading');
-        setError(null);
+        setErrorMessage(null);
+        setFormErrors([]);
 
         try {
         const response = await axios.post(
             `${import.meta.env.VITE_API_BASE_URL}/appointments`,
             formData,
             {
-            headers: {
-                'Content-Type': 'application/json'
-            }
+                headers: {
+                    'Content-Type': 'application/json'
+                }
             }
         );
 
-        console.log('Success:', response.data);
         setStatus('success');
-        setFormData(defaultFormData); // Clear form
+        setFormData(defaultFormData);
         } catch (err: any) {
-            console.error('Form submission error:', err);
             setStatus('error');
-            setError(err.response?.data?.message || 'Something went wrong.');
+            setErrorMessage(err.response?.data?.message || 'Something went wrong.');
+            if (err.response.status == 400) {
+                setFormErrors(err.response.data.errors);
+            }
         }
     };
 
@@ -81,6 +87,7 @@ function BookingForm({ services, minDate }: BookingFormProps) {
         <div className="my-5">
             <label className="text-sm toothline-text">Full Name *</label>
             <input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full my-1 bg-gray-100 px-3 py-2 rounded-md border border-gray-400" placeholder="Enter your full name" />
+            <ErrorText field="name" errors={formErrors} />
         </div>
 
         <div className="my-5">
@@ -88,10 +95,12 @@ function BookingForm({ services, minDate }: BookingFormProps) {
                 <div>
                     <label className="text-sm toothline-text">Email *</label>
                     <input type="text" name="email" value={formData.email} onChange={handleChange} className="w-full my-1 bg-gray-100 px-3 py-2 rounded-md border border-gray-400" placeholder="Enter your email" />
+                    <ErrorText field="email" errors={formErrors} />
                 </div>
                 <div>
                     <label className="text-sm toothline-text">Phone Number *</label>
                     <input type="text" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} className="w-full my-1 bg-gray-100 px-3 py-2 rounded-md border border-gray-400" placeholder="Enter your phone" />
+                    <ErrorText field="phoneNumber" errors={formErrors} />
                 </div>
             </div>
         </div>
@@ -101,10 +110,12 @@ function BookingForm({ services, minDate }: BookingFormProps) {
                 <div>
                     <label className="text-sm toothline-text">Preferred Date *</label>
                     <input type="date" name="appointmentDate" value={formData.appointmentDate} onChange={handleChange} className="w-full my-1 bg-gray-100 px-3 py-2 rounded-md border border-gray-400" min={minDate} />
+                    <ErrorText field="appointmentDate" errors={formErrors} />
                 </div>
                 <div>
                     <label className="text-sm toothline-text">Preferred Time *</label>
                     <input type="time" name="appointmentTime" value={formData.appointmentTime} onChange={handleChange} className="w-full my-1 bg-gray-100 px-3 py-2 rounded-md border border-gray-400" />
+                    <ErrorText field="appointmentTime" errors={formErrors} />
                 </div>
             </div>
         </div>
@@ -119,6 +130,7 @@ function BookingForm({ services, minDate }: BookingFormProps) {
                     </option>
                 ))}
             </select>
+            <ErrorText field="serviceId" errors={formErrors} />
         </div>
 
         <div className="my-5">
@@ -133,7 +145,7 @@ function BookingForm({ services, minDate }: BookingFormProps) {
                 disabled={status === 'loading'}
                 >{status === 'loading' ? 'Sending...' : 'Submit Appointment Request'}</button>
             {status === 'success' && <p className="mt-3 text-green-600">Form submitted successfully!</p>}
-            {status === 'error' && <p className="mt-3 text-red-600">Error: {error}</p>}
+            {status === 'error' && <p className=" text-sm mt-3 text-red-600">Error: {errorMessage}</p>}
         </div>
     </div>
   );

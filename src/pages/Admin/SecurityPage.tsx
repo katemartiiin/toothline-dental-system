@@ -1,13 +1,14 @@
-import { useEffect, useState } from 'react';
 import Modal from '../../components/Modal';
+import { useEffect, useState } from 'react';
 import ErrorText from '../../components/ErrorText';
-import ResetPassword from '../../components/security/ResetPassword';
-import AuditLogs from '../../components/security/AuditLogs';
-import { fetchUsersByRole, createUser, type UserForm, type User, type UsersFilters} from '../../api/users';
-import { updateUserAsAdmin, type UpdateUserForm } from '../../api/security';
+import Pagination from '../../components/Pagination';
 import { type FieldError } from '../../utils/toastMessage';
-import { type PageOptions, type PaginateDefault } from '../../utils/paginate';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import AuditLogs from '../../components/security/AuditLogs';
+import { createChangeHandler } from '../../utils/changeHandler';
+import ResetPassword from '../../components/security/ResetPassword';
+import { updateUserAsAdmin, type UpdateUserForm } from '../../api/security';
+import { type PageOptions, type PaginateDefault, updatePageOptions } from '../../utils/paginate';
+import { fetchUsersByRole, createUser, type UserForm, type User, type UsersFilters} from '../../api/users';
 
 const SecurityPage: React.FC = () => {
   const [openCreate, setOpenCreate] = useState(false);
@@ -52,43 +53,15 @@ const SecurityPage: React.FC = () => {
   const [updateUserForm, setUpdateUserForm] = useState<UpdateUserForm>(defaultUserUpdateForm);
   const [user, setUser] = useState<User | any>();
 
-  const handleUserForm = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement >) => {
-    const { name, value } = e.target;
-    setUserForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleUpdateUserRole = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement >) => {
-    const { name, value } = e.target;
-    setUpdateUserForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement >) => {
-    const { name, value } = e.target;
-    setPaginateDefault((prev) => ({
-    ...prev,
-    [name]: value,
-    }));
-  };
+  const handleUserForm = createChangeHandler(setUserForm);
+  const handleUpdateUserRole = createChangeHandler(setUpdateUserForm);
+  const handleFilterChange = createChangeHandler(setPaginateDefault);
 
   const getUsers = async() => {
     try {
       const res = await fetchUsersByRole(userFilters, paginateDefault);
       setUsers(res.content);
-      setPageOptions({
-        first: res.first,
-        last: res.last,
-        number: res.number,
-        numberOfElements: res.numberOfElements,
-        size: res.size,
-        totalElements: res.totalElements,
-        totalPages: res.totalPages
-      });
+      updatePageOptions(setPageOptions, res);
     } catch (error) {
       console.log('Failed to fetch users', error)
     }
@@ -192,31 +165,12 @@ const SecurityPage: React.FC = () => {
           <p className="w-full bg-gray-50 my-1 p-1 text-gray-500 italic text-center">No users added yet.</p>
         )}
 
-        {/* Pagination */}
-        <div className="w-full flex justify-end toothline-bg-light border border-gray-200 p-3 my-1 text-sm space-x-7">
-          <span className="my-auto">{ pageOptions.totalElements } total entries</span>
-          <div>
-            <span className="my-auto mx-2">Show</span>
-            <select id="size" name="size" value={paginateDefault.size} onChange={handleFilterChange} className="rounded-md text-sm">
-                <option value="5">5</option>
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-            </select>
-          </div>
-          <button type="button" onClick={() => handleChangePage('prev')} disabled={pageOptions.first} className={`flex p-1 ${
-                pageOptions.first ? 'text-gray-400' : 'hover:toothline-text-primary'
-              }`}>
-            <ArrowLeft size={25} className="my-auto" />
-            <span className="mx-1 my-auto">Previous</span>
-          </button>
-          <button type="button" onClick={() => handleChangePage('next')} disabled={pageOptions.last} className={`flex p-1 ${
-                pageOptions.last ? 'text-gray-400' : 'hover:toothline-text-primary'
-              }`}>
-            <span className="mx-1 my-auto">Next</span>
-            <ArrowRight size={25} className="my-auto" />
-          </button>
-        </div>
+        <Pagination
+          pageOptions={pageOptions}
+          filters={paginateDefault}
+          onFilterChange={handleFilterChange}
+          onPageChange={handleChangePage}
+        />
 
         {/* Create User */}
           <Modal

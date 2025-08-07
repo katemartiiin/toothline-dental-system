@@ -1,9 +1,9 @@
 import axios from 'axios';
 import { useRef, useState, useEffect } from 'react';
-import { scrollToRef } from '../../utils/scrollToRef';
 import Header from '../../components/web/Header';
 import Footer from '../../components/web/Footer';
 import Services from '../../components/web/Services';
+import { scrollToRef } from '../../utils/scrollToRef';
 import BookingForm from '../../components/web/BookingForm';
 interface Service {
   id: number;

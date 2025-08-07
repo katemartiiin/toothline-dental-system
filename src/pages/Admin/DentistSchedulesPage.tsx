@@ -1,12 +1,13 @@
+import Modal from '../../components/Modal';
+import { Pencil, Trash } from 'lucide-react';
+import ErrorText from '../../components/ErrorText';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import Modal from '../../components/Modal';
-import ErrorText from '../../components/ErrorText';
-import { Pencil, Trash } from 'lucide-react';
+import { type FieldError } from '../../utils/toastMessage';
+import { createChangeHandler } from '../../utils/changeHandler';
+import { fetchUsersByRole, type UsersFilters } from '../../api/users';
 import { fetchSchedules, fetchMySchedules, createSchedule, createMySchedule, updateSchedule, deleteSchedule,
   type DentistSchedule, type ScheduleForm, type UpdateScheduleForm, type ScheduleDay, scheduleDays } from '../../api/schedules';
-import { fetchUsersByRole, type UsersFilters } from '../../api/users';
-import { type FieldError } from '../../utils/toastMessage';
 interface Dentist {
   id: number;
   email: string;
@@ -78,21 +79,8 @@ const DentistSchedulesPage: React.FC = () => {
     }
   };
 
-  const handleScheduleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement >) => {
-    const { name, value } = e.target;
-    setScheduleForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleUpdateSchedFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement >) => {
-    const { name, value } = e.target;
-    setUpdateScheduleForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  const handleScheduleFormChange = createChangeHandler(setScheduleForm);
+  const handleUpdateSchedFormChange = createChangeHandler(setUpdateScheduleForm);
 
   const handleDentistChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedId = Number(event.target.value);
