@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import ErrorText from '../../components/ErrorText';
 import { type FieldError } from '../../utils/toastMessage';
+import { createChangeHandler } from '../../utils/changeHandler';
 import { fetchCurrentUser, updateProfile, type ProfileForm  } from '../../api/users';
 const UserProfilePage: React.FC = () => {
   const [formErrors, setFormErrors] = useState<FieldError[]>([]);
@@ -13,13 +14,7 @@ const UserProfilePage: React.FC = () => {
     confirmPassword: ''
   });
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setProfileForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  const handleFormChange = createChangeHandler(setProfileForm);
 
   const getCurrentUser = async () => {
     try {
@@ -54,7 +49,6 @@ const UserProfilePage: React.FC = () => {
   return (
     <div className="w-full flex flex-wrap px-16 py-2">
 
-      {/* Cards */}
       <div className="w-full grid grid-cols-2 gap-4">
         <div className="w-full flex flex-wrap px-10 py-7 bg-white rounded-lg shadow-md">
          <h4 className="fw-500">Profile Information</h4>

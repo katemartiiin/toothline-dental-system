@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import Modal from '../../components/Modal';
 import { type User } from '../../api/users';
+import Modal from '../../components/Modal';
 import { updateUserAsAdmin, type UpdateUserForm } from '../../api/security';
 interface ResetPasswordProps {
   users: User[];
@@ -57,7 +57,7 @@ const ResetPassword = ({ users }: ResetPasswordProps) => {
             </div>
           </div>
         </div>
-        {/* Reset Password Confirmation */}
+        {/* Reset Password Modal */}
         <Modal
             isOpen={openReset}
             title="Reset Password for User"

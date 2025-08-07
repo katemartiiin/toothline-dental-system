@@ -1,13 +1,14 @@
-import { useRef, useState, useEffect } from 'react';
 import Modal from '../../components/Modal';
 import ErrorText from '../../components/ErrorText';
+import { useRef, useState, useEffect } from 'react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { fetchPublicServices } from '../../api/services';
+import { type FieldError } from '../../utils/toastMessage';
+import { createChangeHandler } from '../../utils/changeHandler'
+import {fetchUsersByRole, type UsersFilters } from '../../api/users';
+import { type PageOptions, updatePageOptions } from '../../utils/paginate';
 import { fetchAppointments, createAppointment, updateAppointment, updateStatus, toggleArchive, 
   type AppointmentFilters, type FormData, type UpdateFormData } from '../../api/appointments';
-import { fetchPublicServices } from '../../api/services';
-import {fetchUsersByRole, type UsersFilters } from '../../api/users';
-import { type FieldError } from '../../utils/toastMessage';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { type PageOptions } from '../../utils/paginate';
 interface Appointment {
   id: number;
   name: string;
@@ -91,7 +92,6 @@ const AppointmentsPage: React.FC = () => {
   });
 
   const [loading, setLoading] = useState(false);
-    // const [totalPages, setTotalPages] = useState(0);
   const [filters, setFilters] = useState<AppointmentFilters>({
     serviceId: "",
     patientName: "",
@@ -157,29 +157,9 @@ const AppointmentsPage: React.FC = () => {
     setOpenEdit(isOpen);
   };
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFilters((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement >) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleUpdateFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement >) => {
-    const { name, value } = e.target;
-    setUpdateFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  const handleFilterChange = createChangeHandler(setFilters);
+  const handleFormChange = createChangeHandler(setFormData);
+  const handleUpdateFormChange = createChangeHandler(setUpdateFormData);
 
   const handleChangePage = (type: string) => {
     const newPage = type == 'next' ? filters.page + 1 : filters.page - 1;
@@ -198,15 +178,7 @@ const AppointmentsPage: React.FC = () => {
       setLoading(true);
       const res = await fetchAppointments(filters);
       setAppointments(res.content);
-      setPageOptions({
-        first: res.first,
-        last: res.last,
-        number: res.number,
-        numberOfElements: res.numberOfElements,
-        size: res.size,
-        totalElements: res.totalElements,
-        totalPages: res.totalPages
-      });
+      updatePageOptions(setPageOptions, res);
     } catch (error) {
       console.error('Failed to fetch appointments', error);
     } finally {

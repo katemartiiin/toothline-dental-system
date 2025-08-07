@@ -10,7 +10,6 @@ const AuditLogs: React.FC = () => {
     navigate('/admin/audit-logs');
   };
 
-  
   const getLogs = async () => {
     try {
       const res = await fetchLatestLogs();

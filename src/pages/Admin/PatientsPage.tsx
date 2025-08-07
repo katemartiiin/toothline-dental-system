@@ -1,11 +1,12 @@
+import Modal from '../../components/Modal';
 import { useEffect, useState } from 'react';
+import ErrorText from '../../components/ErrorText';
+import Pagination from '../../components/Pagination';
+import { type FieldError } from '../../utils/toastMessage';
+import { createChangeHandler } from '../../utils/changeHandler';
 import { fetchPatients, createPatient, updatePatient, archivePatient, 
   type PatientForm, type PatientFilters } from '../../api/patients';
-import { type FieldError } from '../../utils/toastMessage';
-import Modal from '../../components/Modal';
-import ErrorText from '../../components/ErrorText';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { type PageOptions } from '../../utils/paginate';
+import { type PageOptions, updatePageOptions } from '../../utils/paginate';
 interface Patient {
   id: number;
   name: string;
@@ -51,29 +52,9 @@ const PatientsPage: React.FC = () => {
   const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setPatientFilters((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement >) => {
-    const { name, value } = e.target;
-    setPatientForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleFormUpdate = (e: React.ChangeEvent<HTMLInputElement >) => {
-    const { name, value } = e.target;
-    setSelectedPatient((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  const handleFilterChange = createChangeHandler(setPatientFilters);
+  const handleFormChange = createChangeHandler(setPatientForm);
+  const handleFormUpdate = createChangeHandler(setSelectedPatient);
 
   const handleSelectedPatient = (patient: Patient, type: string) => {
       setFormErrors([]);
@@ -96,15 +77,7 @@ const PatientsPage: React.FC = () => {
     try {
       const res = await fetchPatients(patientFilters);
       setPatients(res.content);
-      setPageOptions({
-        first: res.first,
-        last: res.last,
-        number: res.number,
-        numberOfElements: res.numberOfElements,
-        size: res.size,
-        totalElements: res.totalElements,
-        totalPages: res.totalPages
-      });
+      updatePageOptions(setPageOptions, res);
     } catch (error) {
       console.error('Failed to fetch patients', error);
     }
@@ -299,31 +272,12 @@ const PatientsPage: React.FC = () => {
           <p className="w-full bg-gray-50 my-1 p-1 text-gray-500 italic text-center">No patients added yet.</p>
         )}
 
-        {/* Pagination */}
-        <div className="w-full flex justify-end toothline-bg-light border border-gray-200 p-3 my-1 text-sm space-x-7">
-          <span className="my-auto">{ pageOptions.totalElements } total entries</span>
-          <div>
-            <span className="my-auto mx-2">Show</span>
-            <select id="size" name="size" value={patientFilters.size} onChange={handleFilterChange} className="rounded-md text-sm">
-                <option value="5">5</option>
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-            </select>
-          </div>
-          <button type="button" onClick={() => handleChangePage('prev')} disabled={pageOptions.first} className={`flex p-1 ${
-                pageOptions.first ? 'text-gray-400' : 'hover:toothline-text-primary'
-              }`}>
-            <ArrowLeft size={25} className="my-auto" />
-            <span className="mx-1 my-auto">Previous</span>
-          </button>
-          <button type="button" onClick={() => handleChangePage('next')} disabled={pageOptions.last} className={`flex p-1 ${
-                pageOptions.last ? 'text-gray-400' : 'hover:toothline-text-primary'
-              }`}>
-            <span className="mx-1 my-auto">Next</span>
-            <ArrowRight size={25} className="my-auto" />
-          </button>
-        </div>
+        <Pagination
+          pageOptions={pageOptions}
+          filters={patientFilters}
+          onFilterChange={handleFilterChange}
+          onPageChange={handleChangePage}
+        />
 
       </div>
     </div>
