@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import Modal from '../../components/Modal';
 import { type User } from '../../api/users';
 import { updateUserAsAdmin, type UpdateUserForm } from '../../api/security';
