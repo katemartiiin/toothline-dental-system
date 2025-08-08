@@ -82,10 +82,11 @@ npm run test
 
 ## 📄 License
 
-MIT License. See `LICENSE` file for details.
+This project is licensed under the [Apache 2.0 License](LICENSE).
 
 ---
 
-## 🙋‍♂️ Author
+## 🧠 Author
 
-Made with ☕ and code by [Kate](https://github.com/katemartiiin)
+Developed by **Kate Janeen Martin.**  
+👩‍💻 [@katemartiiin](https://github.com/katemartiiin)
