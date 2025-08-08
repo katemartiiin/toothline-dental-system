@@ -1,15 +1,36 @@
-function App() {
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import ProtectedRoute from './components/ProtectedRoute';
+import Index from './pages/Web/Index';
+import LoginPage from './pages/Admin/LoginPage';
+import AdminLayout from './components/layout/AdminLayout';
+import DashboardPage from './pages/Admin/DashboardPage';
+import AuditLogPage from './pages/Admin/AuditLogPage';
+import AppointmentsPage from './pages/Admin/AppointmentsPage';
+import DentistSchedulesPage from './pages/Admin/DentistSchedulesPage';
+import ServicesPage from './pages/Admin/ServicesPage';
+import PatientsPage from './pages/Admin/PatientsPage';
+import SecurityPage from './pages/Admin/SecurityPage';
+import UserProfilePage from './pages/Admin/UserProfilePage';
+
+const App: React.FC = () => {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-100 to-blue-300">
-      <div className="p-10 bg-white shadow-lg rounded-xl text-center space-y-4">
-        <h1 className="text-4xl font-bold text-blue-800">Toothline Dental</h1>
-        <p className="text-gray-600">Experience world-class dental care with our team of specialists.</p>
-        <button className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition">
-          Book Your Visit
-        </button>
-      </div>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/admin/login" element={<LoginPage />} />
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route path="dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+          <Route path="appointments" element={<ProtectedRoute><AppointmentsPage /></ProtectedRoute>} />
+          <Route path="schedules" element={<ProtectedRoute><DentistSchedulesPage /></ProtectedRoute>} />
+          <Route path="services" element={<ProtectedRoute><ServicesPage /></ProtectedRoute>} />
+          <Route path="patients" element={<ProtectedRoute><PatientsPage /></ProtectedRoute>} />
+          <Route path="security" element={<ProtectedRoute requiredRole="ADMIN"><SecurityPage /></ProtectedRoute>} />
+          <Route path="profile" element={<ProtectedRoute><UserProfilePage /></ProtectedRoute>} />
+          <Route path="audit-logs" element={<ProtectedRoute requiredRole="ADMIN"><AuditLogPage /></ProtectedRoute>} />
+        </Route>
+      </Routes>
+    </Router>
   );
-}
+};
 
 export default App;

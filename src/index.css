@@ -1,3 +1,101 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Font setup */
+@layer base {
+    /* Font Setup */
+    @font-face {
+        font-family: 'Montserrat';
+        src: url('./assets/fonts/Montserrat-VariableFont_wght.ttf') format('truetype');
+        font-weight: 100 900; 
+        font-style: normal;
+        font-display: swap;
+    }
+
+    /* Italic Montserrat */
+    @font-face {
+        font-family: 'Montserrat';
+        src: url('./assets/fonts/Montserrat-Italic-VariableFont_wght.ttf') format('truetype');
+        font-weight: 100 900;
+        font-style: italic;
+        font-display: swap;
+    }
+
+    @font-face {
+        font-family: 'Open Sans';
+        src: url('./assets/fonts/OpenSans-VariableFont_wdth,wght.ttf') format('truetype');
+        font-style: normal;
+        font-weight: 300 800; /* You can adjust based on supported range */
+        font-stretch: 75% 100%; /* Uses wdth axis (width), 100% is default */
+        font-display: swap;
+    }
+
+    /* Italic Open Sans */
+    @font-face {
+        font-family: 'Open Sans';
+        src: url('./assets/fonts/OpenSans-Italic-VariableFont_wdth,wght.ttf') format('truetype');
+        font-style: italic;
+        font-weight: 300 800;   /* Adjust based on actual supported range */
+        font-stretch: 75% 100%; /* wdth axis support */
+        font-display: swap;
+    }
+}
+@layer utilities {
+    /* Colors */
+    .toothline-primary {
+        background-color: #3eb8c0;
+    }
+
+    .toothline-primary-login {
+        background-color: #1ea6b0;
+    }
+
+    .toothline-primary-darker {
+        background-color: #0c7077;
+    }
+
+    .toothline-secondary {
+        background-color: #E1F5F8;
+    }
+
+    .toothline-accent {
+        background-color: #256D78;
+    }
+
+    .toothline-accent-hover {
+        background-color: #318e9c;
+    }
+
+    .toothline-bg-light {
+        background-color: #F7F9FA;
+    }
+
+    .toothline-bg-error {
+        background-color: #FF6B6B;
+    }
+
+    .toothline-text {
+        color: #6C757D;
+    }
+
+    .toothline-text-primary {
+        color: #3eb8c0;
+    }
+
+    .toothline-success {
+        color: #4CAF50;
+    }
+
+    .toothline-error {
+        color: #FF6B6B;
+    }
+
+    .toothline-text-accent {
+        color: #256D78;
+    }
+
+    .toothline-text-light {
+        color: #F7F9FA;
+    }
+}
