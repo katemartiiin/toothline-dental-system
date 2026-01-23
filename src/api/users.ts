@@ -5,6 +5,13 @@ import { toastError, toastSuccess  } from '../utils/toastMessage';
 export interface UsersFilters {
     role?: string;
 };
+
+export interface UserFilters {
+    name?: string;
+    page: number;
+    size: number;
+};
+
 export interface User {
   id: number;
   name: string;
@@ -17,6 +24,7 @@ export interface UserForm {
   name: string;
   email: string;
   role: string;
+  password?: string;
 }
 
 export interface ProfileForm {
@@ -37,6 +45,15 @@ export const fetchUsersByRole = async (filters: UsersFilters, paginate: Paginate
   })
   return res.data;
 };
+
+// Fetch all users with pagination and filters
+export const fetchUsers = async (filters: UserFilters) => {
+  const res = await axios.get('/admin/users', {
+    params: filters
+  });
+  return res.data;
+};
+
 // Get Profile
 export const fetchCurrentUser = async () => {
   const res = await axios.get('/admin/users/me');
@@ -54,6 +71,31 @@ export const createUser = async (userForm: UserForm) => {
     if (error.response.data.status == 400) {
       return error.response.data;
     }
+  }
+}
+
+export const updateUser = async (userId: number, userForm: UserForm) => {
+  try {
+    const res = await axios.put(`/admin/users/${userId}`, userForm);
+    toastSuccess(res.data.message);
+    return res.data;
+  } catch (error: any) {
+    toastError(error.response.data.message);
+
+    if (error.response.data.status == 400) {
+      return error.response.data;
+    }
+  }
+}
+
+export const deleteUser = async (userId: number) => {
+  try {
+    const res = await axios.delete(`/admin/users/${userId}`);
+    toastSuccess(res.data.message);
+    return res;
+  } catch (error: any) {
+    toastError(error.response.data.message);
+    return error.response;
   }
 }
 
