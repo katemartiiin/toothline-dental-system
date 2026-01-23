@@ -1,20 +1,240 @@
 import Modal from '../../components/Modal';
-import { Pencil, Trash } from 'lucide-react';
-import ErrorText from '../../components/ErrorText';
 import { useEffect, useRef, useState } from 'react';
+import { motion, AnimatePresence, type Variants } from 'framer-motion';
+import { Pencil, Trash2, Plus, Calendar, Clock, User, CheckCircle, XCircle, Coffee, AlertTriangle, ChevronDown } from 'lucide-react';
+import ErrorText from '../../components/ErrorText';
 import { useAuth } from '../../context/AuthContext';
 import { type FieldError } from '../../utils/toastMessage';
 import { createChangeHandler } from '../../utils/changeHandler';
 import { fetchUsersByRole, type UsersFilters } from '../../api/users';
 import { fetchSchedules, fetchMySchedules, createSchedule, createMySchedule, updateSchedule, deleteSchedule,
   type DentistSchedule, type ScheduleForm, type UpdateScheduleForm, type ScheduleDay, scheduleDays } from '../../api/schedules';
+
 interface Dentist {
   id: number;
   email: string;
   name: string;
   role: string;
 }
+
 type GroupedSchedules = Record<ScheduleDay, DentistSchedule[]>;
+
+// Animation
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05
+    }
+  }
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.3 }
+  }
+};
+
+const cardVariants: Variants = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: { 
+    opacity: 1, 
+    scale: 1,
+    transition: { duration: 0.3 }
+  }
+};
+
+// Status Badge
+const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
+  const statusConfig: Record<string, { bg: string; text: string; icon: React.ReactNode; label: string }> = {
+    AVAILABLE: { 
+      bg: 'bg-green-100', 
+      text: 'text-green-700',
+      icon: <CheckCircle size={12} />,
+      label: 'Available'
+    },
+    BREAK: { 
+      bg: 'bg-yellow-100', 
+      text: 'text-yellow-700',
+      icon: <Coffee size={12} />,
+      label: 'Break'
+    },
+    UNAVAILABLE: { 
+      bg: 'bg-red-100', 
+      text: 'text-red-700',
+      icon: <XCircle size={12} />,
+      label: 'Unavailable'
+    },
+  };
+
+  const config = statusConfig[status] || statusConfig.UNAVAILABLE;
+
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
+      {config.icon}
+      {config.label}
+    </span>
+  );
+};
+
+// Day Card
+const DayCard: React.FC<{
+  day: string;
+  schedules: DentistSchedule[];
+  onEdit: (schedule: DentistSchedule) => void;
+  onDelete: (id: number) => void;
+  index: number;
+}> = ({ day, schedules, onEdit, onDelete, index }) => {
+  const dayColors: Record<string, { gradient: string; accent: string }> = {
+    MONDAY: { gradient: 'from-blue-500 to-blue-600', accent: 'bg-blue-500' },
+    TUESDAY: { gradient: 'from-purple-500 to-purple-600', accent: 'bg-purple-500' },
+    WEDNESDAY: { gradient: 'from-teal-500 to-teal-600', accent: 'bg-teal-500' },
+    THURSDAY: { gradient: 'from-orange-500 to-orange-600', accent: 'bg-orange-500' },
+    FRIDAY: { gradient: 'from-pink-500 to-pink-600', accent: 'bg-pink-500' },
+    SATURDAY: { gradient: 'from-cyan-500 to-cyan-600', accent: 'bg-cyan-500' },
+    SUNDAY: { gradient: 'from-gray-500 to-gray-600', accent: 'bg-gray-500' },
+  };
+
+  const colors = dayColors[day] || dayColors.MONDAY;
+  const formattedDay = day.charAt(0) + day.slice(1).toLowerCase();
+
+  return (
+    <motion.div
+      variants={cardVariants}
+      custom={index}
+      className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
+    >
+      {/* Day Header */}
+      <div className={`bg-gradient-to-r ${colors.gradient} px-4 py-3`}>
+        <h3 className="text-white font-bold text-sm flex items-center gap-2">
+          <Calendar size={16} />
+          {formattedDay}
+        </h3>
+      </div>
+
+      {/* Schedule Items */}
+      <div className="p-3 space-y-2 min-h-[120px]">
+        <AnimatePresence mode="popLayout">
+          {schedules.length > 0 ? (
+            schedules.map((schedule, idx) => (
+              <motion.div
+                key={schedule.id}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+                transition={{ delay: idx * 0.05 }}
+                className="group relative bg-gray-50 rounded-xl p-3 hover:bg-gray-100 transition-colors"
+              >
+                {/* Time */}
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2 text-gray-700">
+                    <Clock size={14} className="text-gray-400" />
+                    <span className="text-sm font-medium">
+                      {schedule.startTime} - {schedule.endTime}
+                    </span>
+                  </div>
+                  <StatusBadge status={schedule.status} />
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => onEdit(schedule)}
+                    className="p-1.5 text-teal-600 hover:bg-teal-100 rounded-lg transition-colors"
+                    title="Edit"
+                  >
+                    <Pencil size={14} />
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => onDelete(schedule.id)}
+                    className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition-colors"
+                    title="Delete"
+                  >
+                    <Trash2 size={14} />
+                  </motion.button>
+                </div>
+              </motion.div>
+            ))
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="h-full flex flex-col items-center justify-center py-6 text-gray-400"
+            >
+              <Calendar size={24} className="mb-2 opacity-50" />
+              <p className="text-xs text-center">No schedule</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </motion.div>
+  );
+};
+
+// Form Input
+const FormInput: React.FC<{
+  label: string;
+  type?: string;
+  name: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  icon?: React.ReactNode;
+}> = ({ label, type = 'text', name, value, onChange, icon }) => (
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
+    <div className="relative">
+      {icon && (
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+          {icon}
+        </span>
+      )}
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        className={`w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm
+                   focus:ring-2 focus:ring-teal-100 focus:border-teal-400 transition-all
+                   ${icon ? 'pl-10' : ''}`}
+      />
+    </div>
+  </div>
+);
+
+// Form Select
+const FormSelect: React.FC<{
+  label: string;
+  name: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  options: { value: string; label: string }[];
+  placeholder?: string;
+}> = ({ label, name, value, onChange, options, placeholder }) => (
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
+    <select
+      name={name}
+      value={value}
+      onChange={onChange}
+      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm
+                 focus:ring-2 focus:ring-teal-100 focus:border-teal-400 transition-all bg-white"
+    >
+      {placeholder && <option value="">{placeholder}</option>}
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>{opt.label}</option>
+      ))}
+    </select>
+  </div>
+);
+
 const DentistSchedulesPage: React.FC = () => {
   const { userName, userRole } = useAuth();
   const [openCreate, setOpenCreate] = useState(false);
@@ -124,6 +344,7 @@ const DentistSchedulesPage: React.FC = () => {
       setFormErrors(createResponse.errors);
     } else {
       setScheduleForm(defaultScheduleForm);
+      setOpenCreate(false);
       fetchDentistSchedules(selectedDentist?.id);
     }
   }
@@ -136,6 +357,7 @@ const DentistSchedulesPage: React.FC = () => {
       setFormErrors(updateResponse.errors);
     } else {
       setUpdateScheduleForm(defaultUpdateSchedForm);
+      setOpenEdit(false);
       fetchDentistSchedules(selectedDentist?.id);
     }
   }
@@ -143,380 +365,345 @@ const DentistSchedulesPage: React.FC = () => {
   useEffect(() => {
     userRole == 'DENTIST' ? fetchDentistSchedules(null) : getDentists();
   }, []);
+
+  const days: ScheduleDay[] = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+
   return (
-    <div className="w-full flex flex-wrap px-16 py-2">
-      <div className="w-full flex flex-wrap">
-        <div className="w-1/2 text-sm">
-          {userRole != "DENTIST" ? (
-            <>
-              <label className="text-sm fw-500 toothline-text">Select Dentist: </label>
-              <select
-                id="dentistId"
-                name="dentistId"
-                onChange={handleDentistChange}
-                value={selectedDentist?.id}
-                className="rounded-md text-sm"
-              >
-                <option value="0">Select Dentist</option>
-                {dentists?.length ? (
-                  dentists.map((dentist) => (
-                    <option key={dentist.id} value={dentist.id}>
-                      {dentist.name}
-                    </option>
-                  ))
-                ) : (
-                  <option disabled>No Dentist/s yet</option>
-                )}
-              </select>
-            </>
-          ) : (
-            <>
-              <div className="flex">
-                <label className="text-sm fw-500 toothline-text">Dentist: </label>
-                <p className="mx-2 text-sm">{userName}</p>
-              </div>
-            </>
-          )}
-        </div>
-
-        <div className="w-1/2 text-sm text-right">
-          <button
-            onClick={() => setOpenCreate(true)}
-            className="px-4 py-2 toothline-accent text-white rounded hover:toothline-primary"
-          >
-            + Add New Schedule
-          </button>
-        </div>
-
-        {/* Create Schedule */}
-        <Modal
-          isOpen={openCreate}
-          title="Create New Schedule"
-          onClose={() => setOpenCreate(false)}
-          >
-            <div>
-              {userRole != 'DENTIST' && (
-                <div className="mb-4">
-                    <label className="block text-sm fw-500 toothline-text">Dentist</label>
-                    <select id="dentistId" name="dentistId" value={scheduleForm.dentistId} onChange={handleScheduleFormChange} className="mt-1 block w-full rounded-md text-sm">
-                        <option value="">Select Dentist</option>
-                        {dentists?.length ? (
-                          dentists.map((dentist) => (
-                          <option key={dentist.id} value={dentist.id}>
-                          {dentist.name}
-                          </option>
-                          ))
-                        ) : (
-                          <option value="" disabled selected>No Dentist/s yet</option>
-                        )}
-                    </select>
-                    <ErrorText field="dentistId" errors={formErrors} />
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="p-6 max-w-full"
+    >
+      {/* Header Section */}
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="mb-6"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          {/* Dentist Selector or Name */}
+          <motion.div variants={itemVariants} className="flex items-center gap-4">
+            {userRole !== 'DENTIST' ? (
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-br from-teal-400 to-cyan-500 rounded-xl">
+                  <User size={20} className="text-white" />
                 </div>
-              )}
-              <div className="mb-4 grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-sm fw-500 toothline-text">Day</label>
-                  <select id="schedDay" name="schedDay" value={scheduleForm.schedDay ? scheduleForm.schedDay : ""} onChange={handleScheduleFormChange} className="mt-1 block w-full rounded-md text-sm">
-                      <option value="">Select day</option>
-                      {scheduleDays.map((day) => (
-                        <option key={day} value={day}>
-                          {day.charAt(0) + day.slice(1).toLowerCase()}
+                  <p className="text-xs text-gray-500 font-medium">Select Dentist</p>
+                  <div className="relative">
+                    <select
+                      name="dentistId"
+                      onChange={handleDentistChange}
+                      value={selectedDentist?.id || 0}
+                      className="appearance-none bg-transparent text-lg font-bold text-gray-800 
+                                 pr-8 focus:outline-none cursor-pointer"
+                    >
+                      <option value="0">Choose a dentist...</option>
+                      {dentists?.map((dentist) => (
+                        <option key={dentist.id} value={dentist.id}>
+                          {dentist.name}
                         </option>
                       ))}
-                  </select>
-                  <ErrorText field="schedDay" errors={formErrors} />
-                </div>
-                <div>
-                  <label className="block text-sm fw-500 toothline-text">Status</label>
-                  <select id="status" name="status" value={scheduleForm.status} onChange={handleScheduleFormChange} className="mt-1 block w-full rounded-md text-sm">
-                      <option value="AVAILABLE">Available</option>
-                      <option value="BREAK">Break</option>
-                      <option value="UNAVAILABLE">Unavailable</option>
-                  </select>
-                  <ErrorText field="status" errors={formErrors} />
+                    </select>
+                    <ChevronDown size={16} className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  </div>
                 </div>
               </div>
-              <div className="mb-4 grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-sm fw-500 toothline-text">Start Time</label>
-                  <input type="time" id="startTime" name="startTime" value={scheduleForm.startTime} onChange={handleScheduleFormChange} className="mt-1 block w-full rounded-md text-sm" />
-                  <ErrorText field="startTime" errors={formErrors} />
+            ) : (
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-400 to-cyan-500 
+                                flex items-center justify-center text-white text-lg font-bold shadow-lg">
+                  {userName?.charAt(0)}
                 </div>
                 <div>
-                  <label className="block text-sm fw-500 toothline-text">End Time</label>
-                  <input type="time" id="endTime" name="endTime" value={scheduleForm.endTime} onChange={handleScheduleFormChange} className="mt-1 block w-full rounded-md text-sm" />
-                  <ErrorText field="endTime" errors={formErrors} />
+                  <p className="text-xs text-gray-500 font-medium">Your Schedule</p>
+                  <p className="text-lg font-bold text-gray-800">{userName}</p>
                 </div>
               </div>
-              <div className="flex justify-end space-x-2">
-                <button
-                  type="button"
-                  onClick={() => setOpenCreate(false)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => createDentistSched()}
-                  className="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700"
-                >
-                  Save Schedule
-                </button>
-              </div>
-            </div>
-        </Modal>
+            )}
+          </motion.div>
 
-        {/* Edit Schedule */}
-        <Modal
-          isOpen={openEdit}
-          title="Edit Schedule"
-          onClose={() => setOpenEdit(false)}
+          {/* Add Button */}
+          <motion.button
+            variants={itemVariants}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setOpenCreate(true)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-teal-500 to-cyan-500 
+                       text-white font-semibold rounded-xl shadow-lg shadow-teal-200 
+                       hover:shadow-xl hover:shadow-teal-300 transition-all duration-300"
           >
+            <Plus size={20} />
+            Add Schedule
+          </motion.button>
+        </div>
+      </motion.div>
+
+      {/* Schedule Grid */}
+      {(userRole === 'DENTIST' || selectedDentist?.id > 0) ? (
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+        >
+          {days.map((day, index) => (
+            <DayCard
+              key={day}
+              day={day}
+              schedules={schedules?.[day] || []}
+              onEdit={(sched) => setAndEditSched(sched, true)}
+              onDelete={handleDeleteSched}
+              index={index}
+            />
+          ))}
+        </motion.div>
+      ) : (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center"
+        >
+          <div className="w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+            <User size={32} className="text-gray-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">Select a Dentist</h3>
+          <p className="text-gray-500 text-sm max-w-md mx-auto">
+            Choose a dentist from the dropdown above to view and manage their weekly schedule.
+          </p>
+        </motion.div>
+      )}
+
+      {/* Create Schedule Modal */}
+      <Modal
+        isOpen={openCreate}
+        title="Create New Schedule"
+        onClose={() => setOpenCreate(false)}
+      >
+        <div className="space-y-5">
+          {userRole !== 'DENTIST' && (
             <div>
-              <div className="mb-4">
-                  <label className="block text-sm fw-500 toothline-text">{selectedSchedule.current.schedDay}</label>
-              </div>
-              <div className="mb-4 grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-sm fw-500 toothline-text">Start Time</label>
-                  <input type="time" id="startTimeUp" name="startTime" value={updateSchedForm.startTime} onChange={handleUpdateSchedFormChange} className="mt-1 block w-full rounded-md text-sm" />
-                  <ErrorText field="startTime" errors={formErrors} />
-                </div>
-                <div>
-                  <label className="block text-sm fw-500 toothline-text">End Time</label>
-                  <input type="time" id="endTimeUp" name="endTime" value={updateSchedForm.endTime} onChange={handleUpdateSchedFormChange} className="mt-1 block w-full rounded-md text-sm" />
-                  <ErrorText field="endTime" errors={formErrors} />
-                </div>
-              </div>
-              <div className="mb-4">
-                  <label className="block text-sm fw-500 toothline-text">Status</label>
-                  <select id="status" name="status" value={updateSchedForm.status} onChange={handleUpdateSchedFormChange} className="mt-1 block w-full rounded-md text-sm">
-                      <option value="AVAILABLE">Available</option>
-                      <option value="BREAK">Break</option>
-                      <option value="UNAVAILABLE">Unavailable</option>
-                  </select>
-                  <ErrorText field="status" errors={formErrors} />
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <button
-                  type="button"
-                  onClick={() => setOpenEdit(false)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => updateDentistSched()}
-                  className="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700"
-                >
-                  Update Schedule
-                </button>
-              </div>
+              <FormSelect
+                label="Dentist"
+                name="dentistId"
+                value={scheduleForm.dentistId}
+                onChange={handleScheduleFormChange}
+                placeholder="Select Dentist"
+                options={dentists.map(d => ({ value: String(d.id), label: d.name }))}
+              />
+              <ErrorText field="dentistId" errors={formErrors} />
             </div>
-        </Modal>
+          )}
 
-        {/* Delete Schedule */}
-        <Modal
-          isOpen={openDelete}
-          title="Delete Schedule"
-          onClose={() => setOpenDelete(false)}
-          >Are you sure you want to delete this schedule? This action cannot be undone.
-          <div className="mt-4 flex justify-end space-x-2">
-            <button
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <FormSelect
+                label="Day"
+                name="schedDay"
+                value={scheduleForm.schedDay || ''}
+                onChange={handleScheduleFormChange}
+                placeholder="Select day"
+                options={scheduleDays.map(day => ({ 
+                  value: day, 
+                  label: day.charAt(0) + day.slice(1).toLowerCase() 
+                }))}
+              />
+              <ErrorText field="schedDay" errors={formErrors} />
+            </div>
+            <div>
+              <FormSelect
+                label="Status"
+                name="status"
+                value={scheduleForm.status}
+                onChange={handleScheduleFormChange}
+                options={[
+                  { value: 'AVAILABLE', label: 'Available' },
+                  { value: 'BREAK', label: 'Break' },
+                  { value: 'UNAVAILABLE', label: 'Unavailable' },
+                ]}
+              />
+              <ErrorText field="status" errors={formErrors} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <FormInput
+                label="Start Time"
+                type="time"
+                name="startTime"
+                value={scheduleForm.startTime}
+                onChange={handleScheduleFormChange}
+                icon={<Clock size={16} />}
+              />
+              <ErrorText field="startTime" errors={formErrors} />
+            </div>
+            <div>
+              <FormInput
+                label="End Time"
+                type="time"
+                name="endTime"
+                value={scheduleForm.endTime}
+                onChange={handleScheduleFormChange}
+                icon={<Clock size={16} />}
+              />
+              <ErrorText field="endTime" errors={formErrors} />
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               type="button"
-              onClick={() => setOpenDelete(false)}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              onClick={() => setOpenCreate(false)}
+              className="px-5 py-2.5 text-gray-600 hover:text-gray-800 font-medium rounded-xl
+                         hover:bg-gray-100 transition-colors"
             >
               Cancel
-            </button>
-            <button
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               type="button"
-              onClick={() => deleteDentistSched()}
-              className="px-4 py-2 toothline-bg-error text-white rounded hover:bg-red-600"
+              onClick={createDentistSched}
+              className="px-5 py-2.5 bg-gradient-to-r from-teal-500 to-cyan-500 text-white 
+                         font-semibold rounded-xl shadow-lg shadow-teal-200 
+                         hover:shadow-xl hover:shadow-teal-300 transition-all"
+            >
+              Save Schedule
+            </motion.button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Edit Schedule Modal */}
+      <Modal
+        isOpen={openEdit}
+        title="Edit Schedule"
+        onClose={() => setOpenEdit(false)}
+      >
+        <div className="space-y-5">
+          {/* Day Badge */}
+          <div className="p-4 bg-gradient-to-r from-teal-50 to-cyan-50 rounded-xl">
+            <div className="flex items-center gap-2">
+              <Calendar size={18} className="text-teal-600" />
+              <span className="font-semibold text-teal-800">
+                {selectedSchedule.current.schedDay?.charAt(0)}{selectedSchedule.current.schedDay?.slice(1).toLowerCase()}
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <FormInput
+                label="Start Time"
+                type="time"
+                name="startTime"
+                value={updateSchedForm.startTime}
+                onChange={handleUpdateSchedFormChange}
+                icon={<Clock size={16} />}
+              />
+              <ErrorText field="startTime" errors={formErrors} />
+            </div>
+            <div>
+              <FormInput
+                label="End Time"
+                type="time"
+                name="endTime"
+                value={updateSchedForm.endTime}
+                onChange={handleUpdateSchedFormChange}
+                icon={<Clock size={16} />}
+              />
+              <ErrorText field="endTime" errors={formErrors} />
+            </div>
+          </div>
+
+          <div>
+            <FormSelect
+              label="Status"
+              name="status"
+              value={updateSchedForm.status}
+              onChange={handleUpdateSchedFormChange}
+              options={[
+                { value: 'AVAILABLE', label: 'Available' },
+                { value: 'BREAK', label: 'Break' },
+                { value: 'UNAVAILABLE', label: 'Unavailable' },
+              ]}
+            />
+            <ErrorText field="status" errors={formErrors} />
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              type="button"
+              onClick={() => setOpenEdit(false)}
+              className="px-5 py-2.5 text-gray-600 hover:text-gray-800 font-medium rounded-xl
+                         hover:bg-gray-100 transition-colors"
+            >
+              Cancel
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              type="button"
+              onClick={updateDentistSched}
+              className="px-5 py-2.5 bg-gradient-to-r from-teal-500 to-cyan-500 text-white 
+                         font-semibold rounded-xl shadow-lg shadow-teal-200 
+                         hover:shadow-xl hover:shadow-teal-300 transition-all"
+            >
+              Update Schedule
+            </motion.button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={openDelete}
+        title="Delete Schedule"
+        onClose={() => setOpenDelete(false)}
+        size="sm"
+      >
+        <div className="text-center py-4">
+          <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+            <AlertTriangle size={32} className="text-red-500" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">Are you sure?</h3>
+          <p className="text-gray-500 text-sm mb-6">
+            This action cannot be undone. The schedule will be permanently deleted.
+          </p>
+
+          <div className="flex justify-center gap-3">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              type="button"
+              onClick={() => setOpenDelete(false)}
+              className="px-5 py-2.5 text-gray-600 hover:text-gray-800 font-medium rounded-xl
+                         border border-gray-200 hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              type="button"
+              onClick={deleteDentistSched}
+              className="px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white 
+                         font-semibold rounded-xl transition-colors"
             >
               Delete Schedule
-            </button>
+            </motion.button>
           </div>
-        </Modal>
-
-      </div>
-      {/* Table */}
-      <div className="w-full flex flex-wrap px-10 py-5 bg-white rounded-lg shadow-md my-5">
-        {userRole != 'DENTIST' ? (
-          <><h2 className="fw-600 text-xl mb-5">Schedule for { selectedDentist?.name }</h2></>
-        ) : (
-          <><h2 className="fw-600 text-xl mb-5">Your Schedule</h2></>
-        )}
-        
-        {/* Days */}
-        <div className="w-full grid grid-cols-3 gap-3">
-            <div className="toothline-bg-light p-3 rounded-md shadow text-sm my-2">
-              <p className="toothline-text fw-600 mb-5">Monday</p>
-
-              {/* Monday */}
-              {schedules?.MONDAY.length ? (
-                schedules.MONDAY.map((mon) => (
-                <div className="w-full grid grid-cols-4 gap-2 text-xs my-3">
-                  <p className="col-span-2 my-auto">{mon.startTime} - {mon.endTime}</p>
-                  <p className={`fw-500 my-auto rounded text-center ${(mon.status === 'AVAILABLE') ? 'toothline-success bg-green-100'
-                    : 'toothline-error bg-red-100' }`}>{mon.status.charAt(0) + mon.status.slice(1).toLowerCase()}</p>
-                  <div className="flex space-x-2 justify-end">
-                    <button type="button" onClick={() => setAndEditSched(mon, true)} className="toothline-accent hover:toothline-primary p-1 rounded"><Pencil color="White" size={10} /></button>
-                    <button type="button" onClick={() => handleDeleteSched(mon.id)} className="toothline-bg-error hover:bg-red-300 p-1 rounded"><Trash color="White" size={10} /></button>
-                  </div>
-                </div>
-                ))
-              ) : (
-                <div className="w-full grid grid-cols-4 gap-2 text-xs my-3">
-                  <p className="col-span-4 text-center italic text-gray-400">--- No schedule for Monday ---</p>
-                </div>
-              )}
-            </div>
-
-            <div className="toothline-bg-light p-3 rounded-md shadow text-sm my-2">
-              <p className="toothline-text fw-600 mb-5">Tuesday</p>
-
-              {/* Tuesday */}
-              {schedules?.TUESDAY.length ? (
-                schedules.TUESDAY.map((tues) => (
-                <div className="w-full grid grid-cols-4 gap-2 text-xs my-3">
-                  <p className="col-span-2 my-auto">{tues.startTime} - {tues.endTime}</p>
-                  <p className={`fw-500 my-auto rounded text-center ${(tues.status === 'AVAILABLE') ? 'toothline-success bg-green-100'
-                    : 'toothline-error bg-red-100' }`}>{tues.status.charAt(0) + tues.status.slice(1).toLowerCase()}</p>
-                  <div className="flex space-x-2 justify-end">
-                    <button type="button" onClick={() => setAndEditSched(tues, true)} className="toothline-accent hover:toothline-primary p-1 rounded"><Pencil color="White" size={10} /></button>
-                    <button type="button" onClick={() => handleDeleteSched(tues.id)} className="toothline-bg-error hover:bg-red-300 p-1 rounded"><Trash color="White" size={10} /></button>
-                  </div>
-                </div>
-                ))
-              ) : (
-                <div className="w-full grid grid-cols-4 gap-2 text-xs my-3">
-                  <p className="col-span-4 text-center italic text-gray-400">--- No schedule for Tuesday ---</p>
-                </div>
-              )}
-            </div>
-
-            <div className="toothline-bg-light p-3 rounded-md shadow text-sm my-2">
-              <p className="toothline-text fw-600 mb-5">Wednesday</p>
-
-              {/* Wednesday */}
-              {schedules?.WEDNESDAY.length ? (
-                schedules.WEDNESDAY.map((wed) => (
-                <div className="w-full grid grid-cols-4 gap-2 text-xs my-3">
-                  <p className="col-span-2 my-auto">{wed.startTime} - {wed.endTime}</p>
-                  <p className={`fw-500 my-auto rounded text-center ${(wed.status === 'AVAILABLE') ? 'toothline-success bg-green-100'
-                    : 'toothline-error bg-red-100' }`}>{wed.status.charAt(0) + wed.status.slice(1).toLowerCase()}</p>
-                  <div className="flex space-x-2 justify-end">
-                    <button type="button" onClick={() => setAndEditSched(wed, true)} className="toothline-accent hover:toothline-primary p-1 rounded"><Pencil color="White" size={10} /></button>
-                    <button type="button" onClick={() => handleDeleteSched(wed.id)} className="toothline-bg-error hover:bg-red-300 p-1 rounded"><Trash color="White" size={10} /></button>
-                  </div>
-                </div>
-                ))
-              ) : (
-                <div className="w-full grid grid-cols-4 gap-2 text-xs my-3">
-                  <p className="col-span-4 text-center italic text-gray-400">--- No schedule for Wednesday ---</p>
-                </div>
-              )}
-            </div>
-
-            <div className="toothline-bg-light p-3 rounded-md shadow text-sm my-2">
-              <p className="toothline-text fw-600 mb-5">Thursday</p>
-
-              {/* Thursday */}
-              {schedules?.THURSDAY.length ? (
-                schedules.THURSDAY.map((thurs) => (
-                <div className="w-full grid grid-cols-4 gap-2 text-xs my-3">
-                  <p className="col-span-2 my-auto">{thurs.startTime} - {thurs.endTime}</p>
-                  <p className={`fw-500 my-auto rounded text-center ${(thurs.status === 'AVAILABLE') ? 'toothline-success bg-green-100'
-                    : 'toothline-error bg-red-100' }`}>{thurs.status.charAt(0) + thurs.status.slice(1).toLowerCase()}</p>
-                  <div className="flex space-x-2 justify-end">
-                    <button type="button" onClick={() => setAndEditSched(thurs, true)} className="toothline-accent hover:toothline-primary p-1 rounded"><Pencil color="White" size={10} /></button>
-                    <button type="button" onClick={() => handleDeleteSched(thurs.id)} className="toothline-bg-error hover:bg-red-300 p-1 rounded"><Trash color="White" size={10} /></button>
-                  </div>
-                </div>
-                ))
-              ) : (
-                <div className="w-full grid grid-cols-4 gap-2 text-xs my-3">
-                  <p className="col-span-4 text-center italic text-gray-400">--- No schedule for Thursday ---</p>
-                </div>
-              )}
-            </div>
-
-            <div className="toothline-bg-light p-3 rounded-md shadow text-sm my-2">
-              <p className="toothline-text fw-600 mb-5">Friday</p>
-
-              {/* Friday */}
-              {schedules?.FRIDAY.length ? (
-                schedules.FRIDAY.map((fri) => (
-                <div className="w-full grid grid-cols-4 gap-2 text-xs my-3">
-                  <p className="col-span-2 my-auto">{fri.startTime} - {fri.endTime}</p>
-                  <p className={`fw-500 my-auto rounded text-center ${(fri.status === 'AVAILABLE') ? 'toothline-success bg-green-100'
-                    : 'toothline-error bg-red-100' }`}>{fri.status.charAt(0) + fri.status.slice(1).toLowerCase()}</p>
-                  <div className="flex space-x-2 justify-end">
-                    <button type="button" onClick={() => setAndEditSched(fri, true)} className="toothline-accent hover:toothline-primary p-1 rounded"><Pencil color="White" size={10} /></button>
-                    <button type="button" onClick={() => handleDeleteSched(fri.id)} className="toothline-bg-error hover:bg-red-300 p-1 rounded"><Trash color="White" size={10} /></button>
-                  </div>
-                </div>
-                ))
-              ) : (
-                <div className="w-full grid grid-cols-4 gap-2 text-xs my-3">
-                  <p className="col-span-4 text-center italic text-gray-400">--- No schedule for Friday ---</p>
-                </div>
-              )}
-            </div>
-
-            <div className="toothline-bg-light p-3 rounded-md shadow text-sm my-2">
-              <p className="toothline-text fw-600 mb-5">Saturday</p>
-
-              {/* Saturday */}
-              {schedules?.SATURDAY.length ? (
-                schedules.SATURDAY.map((sat) => (
-                <div className="w-full grid grid-cols-4 gap-2 text-xs my-3">
-                  <p className="col-span-2 my-auto">{sat.startTime} - {sat.endTime}</p>
-                  <p className={`fw-500 my-auto rounded text-center ${(sat.status === 'AVAILABLE') ? 'toothline-success bg-green-100'
-                    : 'toothline-error bg-red-100' }`}>{sat.status.charAt(0) + sat.status.slice(1).toLowerCase()}</p>
-                  <div className="flex space-x-2 justify-end">
-                    <button type="button" onClick={() => setAndEditSched(sat, true)} className="toothline-accent hover:toothline-primary p-1 rounded"><Pencil color="White" size={10} /></button>
-                    <button type="button" onClick={() => handleDeleteSched(sat.id)} className="toothline-bg-error hover:bg-red-300 p-1 rounded"><Trash color="White" size={10} /></button>
-                  </div>
-                </div>
-                ))
-              ) : (
-                <div className="w-full grid grid-cols-4 gap-2 text-xs my-3">
-                  <p className="col-span-4 text-center italic text-gray-400">--- No schedule for Saturday ---</p>
-                </div>
-              )}
-            </div>
-
-            <div className="toothline-bg-light p-3 rounded-md shadow text-sm my-2">
-              <p className="toothline-text fw-600 mb-5">Sunday</p>
-
-              {/* Sunday */}
-              {schedules?.SUNDAY.length ? (
-                schedules.SUNDAY.map((sun) => (
-                <div className="w-full grid grid-cols-4 gap-2 text-xs my-3">
-                  <p className="col-span-2 my-auto">{sun.startTime} - {sun.endTime}</p>
-                  <p className={`fw-500 my-auto rounded text-center ${(sun.status === 'AVAILABLE') ? 'toothline-success bg-green-100'
-                    : 'toothline-error bg-red-100' }`}>{sun.status.charAt(0) + sun.status.slice(1).toLowerCase()}</p>
-                  <div className="flex space-x-2 justify-end">
-                    <button type="button" onClick={() => setAndEditSched(sun, true)} className="toothline-accent hover:toothline-primary p-1 rounded"><Pencil color="White" size={10} /></button>
-                    <button type="button" onClick={() => handleDeleteSched(sun.id)} className="toothline-bg-error hover:bg-red-300 p-1 rounded"><Trash color="White" size={10} /></button>
-                  </div>
-                </div>
-                ))
-              ) : (
-                <div className="w-full grid grid-cols-4 gap-2 text-xs my-3">
-                  <p className="col-span-4 text-center italic text-gray-400">--- No schedule for Sunday ---</p>
-                </div>
-              )}
-            </div>
         </div>
-
-      </div>
-    </div>
+      </Modal>
+    </motion.div>
   );
 };
 

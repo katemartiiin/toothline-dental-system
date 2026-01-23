@@ -4,13 +4,16 @@ import type { ReactNode } from 'react';
 interface UserData {
   token: string;
   name: string;
+  email: string;
   role: string;
 }
+
 interface AuthContextType {
   token: string | null;
   userRole: string | null;
   userName: string | null;
-  login: (token: string) => void;
+  userEmail: string | null;
+  login: (userData: UserData) => void;
   logout: () => void;
 }
 
@@ -18,9 +21,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
 
-  const defaultUserData = {
+  const defaultUserData: UserData = {
     token: '',
     name: '',
+    email: '',
     role: ''
   }
 
@@ -38,23 +42,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.getItem('userName')
   );
 
-  const login = (userData: UserData | any) => {
+  const [userEmail, setUserEmail] = useState<string | null>(
+    localStorage.getItem('userEmail')
+  );
+
+  const login = (userData: UserData) => {
     setToken(userData.token);
+    setUserName(userData.name);
+    setUserEmail(userData.email);
+    setUserRole(userData.role);
     setCurrentUserData(userData);
+    
     localStorage.setItem('authToken', userData.token);
     localStorage.setItem('userName', userData.name);
+    localStorage.setItem('userEmail', userData.email);
     localStorage.setItem('userRole', userData.role);
   };
 
   const logout = () => {
     setToken(null);
+    setUserName(null);
+    setUserEmail(null);
+    setUserRole(null);
+    setCurrentUserData(defaultUserData);
+    
     localStorage.removeItem('authToken');
     localStorage.removeItem('userName');
+    localStorage.removeItem('userEmail');
     localStorage.removeItem('userRole');
   };
 
   return (
-    <AuthContext.Provider value={{ token, userRole, userName, login, logout }}>
+    <AuthContext.Provider value={{ token, userRole, userName, userEmail, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
